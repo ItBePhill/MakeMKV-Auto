@@ -94,9 +94,9 @@ def WaitForDisc(disc_check_interval, makemkv_disc):
     while True:
         try:
             print(os.listdir(f"{makemkv_disc}\\"))
-            time.sleep(disc_check_interval)
             return
         except:
+            time.sleep(disc_check_interval)
             continue
         
 
@@ -141,6 +141,7 @@ def ReadyToRip():
     ]
 
     Rip(makemkv_args, makemkv_path)
+    return
 
 
 def main():

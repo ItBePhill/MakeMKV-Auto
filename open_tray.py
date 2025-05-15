@@ -3,12 +3,8 @@
 from platform import system as platform_name
 from os import system
 import ctypes
-
-def Setup(letter):
-    global driveLetter
-    driveLetter = letter
-
-platforms_dictionary = {
+def Run(driveLetter):
+    platforms_dictionary = {
     "Windows": {                              
                 "open" : f'ctypes.windll.WINMM.mciSendStringW(u"open {driveLetter}: type CDAudio alias {driveLetter}_drive", None, 0, None); ctypes.windll.WINMM.mciSendStringW(u"set {driveLetter}_drive door open", None, 0, None)',
                 "close": f'ctypes.windll.WINMM.mciSendStringW(u"open {driveLetter}: type CDAudio alias {driveLetter}_drive", None, 0, None); ctypes.windll.WINMM.mciSendStringW(u"set {driveLetter}_drive door closed", None, 0, None)'
@@ -30,10 +26,8 @@ platforms_dictionary = {
                 "close": 'system("sudo cdcontrol close")'
                }
 }
-print(platform_name())
-
-if platform_name() in platforms_dictionary:
-    print('Opening Disc Tray... ')
-    exec(platforms_dictionary[platform_name()]["open"])
-else:
-    print("Sorry, no OS found")
+    if platform_name() in platforms_dictionary:
+        print('Opening Disc Tray... ')
+        exec(platforms_dictionary[platform_name()]["open"])
+    else:
+        print("Sorry, no OS found")

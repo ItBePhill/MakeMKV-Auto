@@ -9,7 +9,8 @@ import string
 import time
 import open_tray
 import tempfile
-
+import sys
+from StringProgressBar import progressBar
 def Startup():
     global makemkv_cache_size, makemkv_min_length, makemkv_directio, makemkv_extra_options, makemkv_disc, makemkv_output, trayOpen, makemkv_info_args, makemkv_path, disc_check_interval
     configDefault = """[makemkv]
@@ -68,6 +69,12 @@ open_tray = 1"""
     trayOpen = config.getboolean("general", "open_tray")
     disc_check_interval = config.getfloat("general", "disc_check_interval")
 
+    out = GetInfo(makemkv_path)
+    outlines = out.splitlines()
+    outSplit = outlines[1].split(",") 
+    letter =  outSplit[6].replace('"', '').removesuffix(":")
+    return letter
+
 def GetInfo(makemkv_path):
     makemkv_info_args = [
          f"{makemkv_path}\\makemkvcon64.exe",
@@ -89,20 +96,39 @@ def GetInfo(makemkv_path):
 
 
 #loop and try to get the len of the drive if it is empty it will return nothing
-def WaitForDisc(disc_check_interval, makemkv_disc):
+def WaitForDisc(disc_check_interval, letter):
+    loadingstrings = [".","..","..."]
+    loadingindex = 0
     #bad but easy
     while True:
         try:
-            print(os.listdir(f"{makemkv_disc}\\"))
+            os.listdir(f"{letter}:\\")
+            print("found a disc!")
             return
         except:
+            sys.stdout.write('\033[2K\033[1G')
+            print(f"Waiting for a disc{loadingstrings[loadingindex]}", end = "\r")
+            if(loadingindex < 2): loadingindex+=1
+            else: loadingindex = 0
             time.sleep(disc_check_interval)
-            continue
         
 
 #run the makemkv command and start ripping the files
+pipefile = tempfile.TemporaryFile()
 def Rip(makemkv_args, makemkv_path):
-    subpr = subprocess.run(args = makemkv_args, executable=f"{makemkv_path}\\makemkvcon64.exe", shell=False)
+    subpr = subprocess.Popen(args = makemkv_args, executable=f"{makemkv_path}\\makemkvcon64.exe", shell=False, stdout = pipefile)
+    commandstr = ""
+    for i in subpr.args:
+        commandstr += f"{i} "
+    print(r'.\makemkvcon64.exe ' + commandstr)
+    pipefile.seek(0)
+    while True:
+        line = pipefile.readline()
+        if not line:
+            break
+        #the real code does filtering here
+        print("test:", line.rstrip())
+
 
 
 def ReadyToRip():
@@ -144,23 +170,17 @@ def ReadyToRip():
     return
 
 
-def main():
-    out = GetInfo(makemkv_path)
-    outlines = out.splitlines()
-    outSplit = outlines[1].split(",") 
-    letter =  outSplit[6].replace('"', '')
-
+def main(letter):
     WaitForDisc(disc_check_interval, letter)
     ReadyToRip()
     if(trayOpen):
         open_tray.Run(letter)
 
-    main()
+    main(letter)
 
 
 
 
 
 
-Startup()
-main()
+main(Startup())

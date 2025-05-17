@@ -5,24 +5,24 @@
 import configparser
 import subprocess
 import os
-import string
 import time
 import open_tray
 import tempfile
 import sys
+import io
 from StringProgressBar import progressBar
 def Startup():
     global makemkv_cache_size, makemkv_min_length, makemkv_directio, makemkv_extra_options, makemkv_disc, makemkv_output, trayOpen, makemkv_info_args, makemkv_path, disc_check_interval
     configDefault = """[makemkv]
 ; Path to MakeMKV
-; must be an absolute path and must end in \
-makemkv_path = \\path\\to\\makemkv
+; must be an absolute path and must end in \\
+makemkv_path = C:\Program Files (x86)\MakeMKV
 
 
 ; Path to the directory where the output files will be saved
 ; a new folder will be created at this path for each disc
-; must be an absolute path and must end in \
-makemkv_output = \\path\\to\\output
+; must be an absolute path and must end in \\
+makemkv_output = \\192.168.1.118\Home\Movies\\
 
 
 ; size of read cache
@@ -49,7 +49,13 @@ makemkv_directio = 1
 
 [general]
 ;whether the tray will be opened when it is done ripping
-open_tray = 1"""
+open_tray = 1
+
+
+; interval of when a disc will be checked in seconds
+disc_check_interval = 5
+
+"""
 
 
     if not os.path.exists("config.ini"):
@@ -103,6 +109,7 @@ def WaitForDisc(disc_check_interval, letter):
     while True:
         try:
             os.listdir(f"{letter}:\\")
+            sys.stdout.write('\033[2K\033[1G')
             print("found a disc!")
             return
         except:
@@ -114,20 +121,21 @@ def WaitForDisc(disc_check_interval, letter):
         
 
 #run the makemkv command and start ripping the files
-pipefile = tempfile.TemporaryFile()
 def Rip(makemkv_args, makemkv_path):
-    subpr = subprocess.Popen(args = makemkv_args, executable=f"{makemkv_path}\\makemkvcon64.exe", shell=False, stdout = pipefile)
-    commandstr = ""
-    for i in subpr.args:
-        commandstr += f"{i} "
-    print(r'.\makemkvcon64.exe ' + commandstr)
-    pipefile.seek(0)
+    subpr = subprocess.Popen(args = makemkv_args, executable=f"{makemkv_path}\\makemkvcon64.exe", shell=False, stdout= subprocess.PIPE, text=True)
     while True:
-        line = pipefile.readline()
+        line = subpr.stdout.readline()
         if not line:
             break
-        #the real code does filtering here
-        print("test:", line.rstrip())
+        lineStrip = line.rstrip()
+
+        if("PRGV" in lineStrip):
+            total = lineStrip.split(":")[1].split(",")[2]
+            current = lineStrip.split(":")[1].split(",")[0]
+            bardata = progressBar.filledBar(int(total), int(current))
+            sys.stdout.write('\033[2K\033[1G')
+            print(bardata, end = "\r")
+    return
 
 
 
@@ -144,7 +152,6 @@ def ReadyToRip():
     letter =  outSplit[6].replace('"', '')
     print(title)
     print(letter)
-
 
     # Create the folder that the files will go in
     if (not os.path.exists(f"{makemkv_output}{title}")):

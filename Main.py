@@ -16,13 +16,13 @@ def Startup():
     configDefault = """[makemkv]
 ; Path to MakeMKV
 ; must be an absolute path and must end in \\
-makemkv_path = C:\Program Files (x86)\MakeMKV
+makemkv_path = \path\to\makemkv
 
 
 ; Path to the directory where the output files will be saved
 ; a new folder will be created at this path for each disc
 ; must be an absolute path and must end in \\
-makemkv_output = \\192.168.1.118\Home\Movies\\
+makemkv_output = \path\to\output
 
 
 ; size of read cache

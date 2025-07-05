@@ -3,3 +3,6 @@ Test
 out.txt
 EXE Stuff
 config.ini
+/dist
+/build
+*.spec

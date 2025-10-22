@@ -13,7 +13,7 @@ import io
 from StringProgressBar import progressBar
 def Startup():
     global makemkv_cache_size, makemkv_min_length, makemkv_directio, makemkv_extra_options, makemkv_disc, makemkv_output, trayOpen, makemkv_info_args, makemkv_path, disc_check_interval
-    configDefault = """[makemkv]
+    configDefault = r"""[makemkv]
 ; Path to MakeMKV
 ; must be an absolute path and must end in \\
 makemkv_path = \path\to\makemkv
@@ -105,6 +105,7 @@ def GetInfo(makemkv_path):
 def WaitForDisc(disc_check_interval, letter):
     loadingstrings = [".","..","..."]
     loadingindex = 0
+    loadingindex = 0
     #bad but easy
     while True:
         try:
@@ -122,19 +123,25 @@ def WaitForDisc(disc_check_interval, letter):
 
 #run the makemkv command and start ripping the files
 def Rip(makemkv_args, makemkv_path):
+    print("\n")
+    message = ""
+    
     subpr = subprocess.Popen(args = makemkv_args, executable=f"{makemkv_path}\\makemkvcon64.exe", shell=False, stdout= subprocess.PIPE, text=True)
     while True:
+        line = ""
+        message = ""
         line = subpr.stdout.readline()
         if not line:
             break
         lineStrip = line.rstrip()
-
         if("PRGV" in lineStrip):
             total = lineStrip.split(":")[1].split(",")[2]
             current = lineStrip.split(":")[1].split(",")[0]
             bardata = progressBar.filledBar(int(total), int(current))
-            sys.stdout.write('\033[2K\033[1G')
-            print(bardata, end = "\r")
+            message += bardata[0] + " | " + str(bardata[1]) + "\n"
+        if("MSG" in lineStrip):
+            message += lineStrip + "\n"
+        print(message)
     return
 
 
@@ -182,7 +189,10 @@ def main(letter):
     ReadyToRip()
     if(trayOpen):
         open_tray.Run(letter)
-
+    else:
+        return;
+    
+    
     main(letter)
 
 

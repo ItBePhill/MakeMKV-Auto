@@ -16,7 +16,7 @@ def Startup():
     configDefault = r"""[makemkv]
 ; Path to MakeMKV
 ; must be an absolute path and must end in \\
-makemkv_path = \path\to\makemkv
+makemkv_path = \path\to\makemkvcon
 
 
 ; Path to the directory where the output files will be saved
@@ -83,7 +83,7 @@ disc_check_interval = 5
 
 def GetInfo(makemkv_path):
     makemkv_info_args = [
-         f"{makemkv_path}\\makemkvcon64.exe",
+         f"{makemkv_path}",
          "info",
          f"disc:{makemkv_disc}", 
          "--robot",
@@ -92,7 +92,7 @@ def GetInfo(makemkv_path):
     #create a temp file to write stdout to
     pipefile = tempfile.TemporaryFile()
     #not using subprocess.PIPE cos of limited size
-    subpr = subprocess.Popen(args = makemkv_info_args, executable=f"{makemkv_path}\\makemkvcon64.exe", stdout=pipefile)
+    subpr = subprocess.Popen(args = makemkv_info_args, executable=f"{makemkv_path}", stdout=pipefile)
     #wait for process to finish
     subpr.wait()
     #go to start of file

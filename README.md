@@ -1,4 +1,4 @@
-#Make MKV-Auto
+# Make MKV-Auto
 ---------------------------------------------------------------
 <p>Automatically finds and then rips blurays and dvds based on options in an ini file</p>
 

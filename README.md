@@ -6,7 +6,7 @@
 
 
 > [!NOTE]
-> run first to generate a config.ini file then edit the file and relaunch<br>
+> Run first to generate a config.ini file then edit the file and relaunch<br>
 
 > [!WARNING]
 > Only Works on Windows However I will gladly review a pr to fix that

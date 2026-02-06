@@ -16,5 +16,5 @@
 > Only Works on Windows However I will gladly review a pr to fix that
 
 > [!WARNING]
-> Required Modules:
+> Required Modules:<br>
 > StringProgressBar: https://pypi.org/project/StringProgressBar/

@@ -17,4 +17,6 @@
 
 > [!WARNING]
 > Required Modules:<br>
-> StringProgressBar: https://pypi.org/project/StringProgressBar/
+> StringProgressBar: https://pypi.org/project/StringProgressBar/<br>
+> Also requires MakeMKV<br>
+> MakeMKV is free while in beta however keys have to be obtained every 60 days: https://forum.makemkv.com/forum/viewtopic.php?t=1053

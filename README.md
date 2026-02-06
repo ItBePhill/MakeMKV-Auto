@@ -12,11 +12,9 @@
 > Only Works on Windows However I will gladly review a pr to fix that
 
 > [!WARNING]
-> Required Modules:<br>
-> StringProgressBar: https://pypi.org/project/StringProgressBar/<br>
->
-> Also requires MakeMKV<br>
-> MakeMKV is free while in beta however keys have to be obtained every 60 days: https://forum.makemkv.com/forum/viewtopic.php?t=1053
+> ### Requirements:
+> -  StringProgressBar: https://pypi.org/project/StringProgressBar/<br>
+> -  MakeMKV (MakeMKV is free while in beta however keys have to be obtained every 60 days: https://forum.makemkv.com/forum/viewtopic.php?t=1053)
 
 
 ### Credits:<br>

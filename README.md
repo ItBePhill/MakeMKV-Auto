@@ -5,7 +5,7 @@
 
 > [!NOTE]
 > Credits:<br>
-> open-tray.py is edited from: [https://gist.github.com/TakesTheBiscuit/a2e3d36c1d20731821fdb41b3831406e#file-open_and_close_cd_tray-py]Takes The Biscuit Open and Close CD Tray
+> open-tray.py is edited from: https://gist.github.com/TakesTheBiscuit/a2e3d36c1d20731821fdb41b3831406e#file-open_and_close_cd_tray-py
 
 > [!NOTE]
 > Instructions: <br>

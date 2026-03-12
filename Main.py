@@ -35,7 +35,7 @@ def Rip(disc):
     print("\n")
     #read the output as it comes in
     while subpr.poll() is None:     
-        outbytes = subpr.stdout.readline()
+        outbytes = subpr.stdout.readline() # type: ignore This error is incorrect, the type is not None and therefore is being ignored
         out = outbytes.decode("utf-8")
         if("PRGV:" in out):
             total = out.split(":")[1].split(",")[2]

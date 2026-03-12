@@ -134,7 +134,7 @@ def Rip(makemkv_args, makemkv_path):
     while True:
         line = ""
         message = ""
-        line = subpr.stdout.readline()
+        line = subpr.stdout.readline() # type: ignore
         if not line:
             break
         lineStrip = line.rstrip()

@@ -9,7 +9,7 @@
 > Run first to generate a config.ini file then edit the file and relaunch<br>
 
 > [!WARNING]
-> Only Works on Windows However I will gladly review a pr to fix that
+> In theory <b>should</b> work on linux however I am unable to try it
 
 > [!WARNING]
 > ### Requirements:

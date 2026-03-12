@@ -6,4 +6,5 @@ config.ini
 /dist
 /build
 *.spec
-out.txt
+.vs
+__pycache__

@@ -1,0 +1,31 @@
+import os
+import subprocess
+import tempfile
+#Class that holds all the information about a disc e.g. the id, name, size
+class Disc:
+    name: str
+    length: str
+    path: str
+    
+
+def GetDisc(makemkv_info_args:list, makemkv_config:list):
+    disc:Disc = Disc()
+
+    subpr = subprocess.Popen(args = makemkv_info_args, stdout = subprocess.PIPE)
+    #read the output as it comes in
+    while subpr.poll() is None:     
+        outbytes = subpr.stdout.readline()
+        out = outbytes.decode("utf-8")
+        if out.startswith("DRV:0,1"):
+            raise Exception("Failed to Open a Disc, is one inserted?")
+        if out.startswith("DRV:0,2"):
+            print("We Found a Disc!")
+            disc.path = makemkv_config[1] + out.split(",")[5].replace('"','')
+
+        if out.startswith("TINFO:0,2,0"):
+            disc.name =  out.split(",")[3].replace('"', '')
+        if out.startswith("TINFO:0,9"):
+            disc.length = out.split(",")[3].replace('"', '')
+
+    print(f"Name: {disc.name}\nLength: {disc.length}\nPath: {disc.path}")
+    return disc

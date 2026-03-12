@@ -1,27 +1,103 @@
-# MakeMKV_Auto - Phill
-# use makemkv to rip a DVD or Blu-ray disc
-# pop open the disc drive when ready for a disc / done
-
-import configparser
+import DiscInfo
 import subprocess
+import configparser
+import datetime
 import os
 import time
-import open_tray
-import tempfile
-import sys
-import io
-from StringProgressBar import progressBar
+makemkv_config:list
+
+
+
+
+def Rip(disc):
+    # compile the args
+    makemkv_args = [
+        f"{makemkv_config[0]}makemkvcon64",
+        "mkv",
+        f"disc:{makemkv_config[2]}", 
+        "all",
+        "--decrypt", 
+        f"--cache={makemkv_config[3]}", 
+        f"--minlength={makemkv_config[4]}", 
+        "--noscan",  
+        "--progress=-same",
+        "--robot", 
+        f"--directio={makemkv_config[5]}",
+        disc.path
+    ]
+    # create the output folder
+    print(f"Creating: {disc.path}")
+    if not os.path.exists(disc.path): os.mkdir(disc.path)
+    # get the current time before ripping
+    t1 = datetime.datetime.now()
+    # rip the movie and continually grab output from stdout
+    subpr = subprocess.Popen(args = makemkv_args, stdout = subprocess.PIPE)
+    print("\n")
+    #read the output as it comes in
+    while subpr.poll() is None:     
+        outbytes = subpr.stdout.readline()
+        out = outbytes.decode("utf-8")
+        if("PRGV:" in out):
+            total = out.split(":")[1].split(",")[2]
+            current = out.split(":")[1].split(",")[0]
+            print(current + " / " +total + "\n")
+        if out.startswith("MSG:"):
+            print(out.split(",")[3].replace('"', ''))
+        
+    # get time after rip
+    # show results and then wait for another disc
+    
+
+
+
+
+
+
+def WaitForDisc():
+    disc = None
+    makemkv_info_args = [
+         f"{makemkv_config[0]}makemkvcon64",
+         "info",
+         f"disc:{makemkv_config[2]}", 
+         "--robot",
+        f"--minlength={makemkv_config[4]}"
+    ] 
+    dots = [".","..","..."]
+    x = 0
+    while disc == None:
+        time.sleep(int(makemkv_config[9]))
+        if x > 2:
+            x = 0
+        
+        #this will continuosly run GetDisc, which will either return a disc or throw an error
+        try:
+            disc = DiscInfo.GetDisc(makemkv_info_args, makemkv_config)
+        except:
+            print("Waiting" + dots[x])
+            x+=1
+            continue
+            
+        else:
+            print(f"Preparing to rip: {disc.name}")
+            Rip(disc)
+
+
+
+
+
 def Startup():
-    global makemkv_cache_size, makemkv_min_length, makemkv_directio, makemkv_extra_options, makemkv_disc, makemkv_output, trayOpen, makemkv_info_args, makemkv_path, disc_check_interval
+    global makemkv_config
     configDefault = r"""[makemkv]
 ; Path to MakeMKV
-; must be an absolute path and must end in \\
+; must be an absolute path
+;!! If you are on linux and have installed makemkv via the forum post !!
+;!! Leave this blank as makemkvcon is on the PATH !!
 makemkv_path = \path\to\makemkv
 
 
 ; Path to the directory where the output files will be saved
 ; a new folder will be created at this path for each disc
-; must be an absolute path and must end in \\
+; must be an absolute path
 makemkv_output = \path\to\output
 
 
@@ -55,6 +131,9 @@ open_tray = 1
 ; interval of when a disc will be checked in seconds
 disc_check_interval = 5
 
+; Whether the log the output to a file
+log_to_file = 1
+
 """
 
 
@@ -65,6 +144,12 @@ disc_check_interval = 5
     config = configparser.ConfigParser()
     config.read("config.ini")
     makemkv_path = config.get("makemkv", "makemkv_path")
+    if(makemkv_path[-1] != "\\" and makemkv_path != "/"):
+        makemkv_path += "\\"
+    elif(makemkv_path == "/"):
+        makemkv_path = ""
+
+
     print(makemkv_path)
     makemkv_cache_size = config.get("makemkv", "makemkv_cache_size")
     makemkv_min_length = config.get("makemkv", "makemkv_min_length")
@@ -74,130 +159,27 @@ disc_check_interval = 5
     makemkv_output = config.get("makemkv", "makemkv_output")
     trayOpen = config.getboolean("general", "open_tray")
     disc_check_interval = config.getfloat("general", "disc_check_interval")
-
-    out = GetInfo(makemkv_path)
-    outlines = out.splitlines()
-    outSplit = outlines[1].split(",") 
-    letter =  outSplit[6].replace('"', '').removesuffix(":")
-    return letter
-
-def GetInfo(makemkv_path):
-    makemkv_info_args = [
-         f"{makemkv_path}\\makemkvcon64.exe",
-         "info",
-         f"disc:{makemkv_disc}", 
-         "--robot",
-        f"--minlength={makemkv_min_length}"
-    ] 
-    #create a temp file to write stdout to
-    pipefile = tempfile.TemporaryFile()
-    #not using subprocess.PIPE cos of limited size
-    subpr = subprocess.Popen(args = makemkv_info_args, executable=f"{makemkv_path}\\makemkvcon64.exe", stdout=pipefile)
-    #wait for process to finish
-    subpr.wait()
-    #go to start of file
-    pipefile.seek(0)
-    #read, decode and return the file
-    return pipefile.read().decode("utf-8")
+    log_to_file = config.getfloat("general", "log_to_file")
 
 
-#loop and try to get the len of the drive if it is empty it will return nothing
-def WaitForDisc(disc_check_interval, letter):
-    loadingstrings = [".","..","..."]
-    loadingindex = 0
-    loadingindex = 0
-    #bad but easy
-    while True:
-        try:
-            os.listdir(f"{letter}:\\")
-            sys.stdout.write('\033[2K\033[1G')
-            print("found a disc!")
-            return
-        except:
-            sys.stdout.write('\033[2K\033[1G')
-            print(f"Waiting for a disc{loadingstrings[loadingindex]}", end = "\r")
-            if(loadingindex < 2): loadingindex+=1
-            else: loadingindex = 0
-            time.sleep(disc_check_interval)
+    makemkv_config = [
+        makemkv_path,
+        makemkv_output,
+        makemkv_disc,
+        makemkv_cache_size,
+        makemkv_min_length,
+        makemkv_directio,
+        makemkv_extra_options,
+        log_to_file,
+        trayOpen,
+        disc_check_interval,
+    ]
+    
+    
+    WaitForDisc()
         
 
-#run the makemkv command and start ripping the files
-def Rip(makemkv_args, makemkv_path):
-    print("\n")
-    message = ""
     
-    subpr = subprocess.Popen(args = makemkv_args, executable=f"{makemkv_path}\\makemkvcon64.exe", shell=False, stdout= subprocess.PIPE, text=True)
-    while True:
-        line = ""
-        message = ""
-        line = subpr.stdout.readline()
-        if not line:
-            break
-        lineStrip = line.rstrip()
-        if("PRGV" in lineStrip):
-            total = lineStrip.split(":")[1].split(",")[2]
-            current = lineStrip.split(":")[1].split(",")[0]
-            bardata = progressBar.filledBar(int(total), int(current))
-            message += bardata[0] + " | " + str(bardata[1]) + "\n"
-        if("MSG" in lineStrip):
-            message += lineStrip + "\n"
-        print(message)
-    return
 
 
-
-def ReadyToRip():
-    #get movie info for folder name
-    out = GetInfo(makemkv_path)
-    outlines = out.splitlines()
-    with open("out.txt", "w+") as f:
-        f.write(str(out))
-    outSplit = outlines[1].split(",") 
-    # Title   
-    title = outSplit[5].replace('"', '')
-    # Drive Letter
-    letter =  outSplit[6].replace('"', '')
-    print(title)
-    print(letter)
-
-    # Create the folder that the files will go in
-    if (not os.path.exists(f"{makemkv_output}{title}")):
-        os.makedirs(f"{makemkv_output}{title}")
-
-
-    makemkv_args = [
-        f"{makemkv_path}\\makemkvcon64.exe",
-        "mkv",
-        f"disc:{makemkv_disc}", 
-        "all",
-        "--decrypt", 
-        f"--cache={makemkv_cache_size}", 
-        f"--minlength={makemkv_min_length}", 
-        "--noscan",  
-        "--progress=-same",
-        "--robot", 
-        f"--directio={makemkv_directio}",
-        f"{makemkv_output}{title}"
-    ]
-
-    Rip(makemkv_args, makemkv_path)
-    return
-
-
-def main(letter):
-    WaitForDisc(disc_check_interval, letter)
-    ReadyToRip()
-    if(trayOpen):
-        open_tray.Run(letter)
-    else:
-        return;
-    
-    
-    main(letter)
-
-
-
-
-
-
-main(Startup())
+Startup()

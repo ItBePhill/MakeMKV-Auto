@@ -13,7 +13,7 @@
 
 > [!WARNING]
 > ### Requirements:
-> -  ~~StringProgressBar: https://pypi.org/project/StringProgressBar/<br>
+> -  ~~StringProgressBar: https://pypi.org/project/StringProgressBar~~</br>
 > -  MakeMKV (MakeMKV is free while in beta however keys have to be obtained every 60 days: https://forum.makemkv.com/forum/viewtopic.php?t=1053)
 
 

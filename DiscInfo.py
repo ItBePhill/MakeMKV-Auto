@@ -17,7 +17,7 @@ def GetDisc(makemkv_info_args:list, makemkv_config:list):
         outbytes = subpr.stdout.readline() # type: ignore
         out = outbytes.decode("utf-8")
         if out.startswith("DRV:0,1"):
-            raise Exception("Failed to Open a Disc, is one inserted?")
+            raise Exception("Failed to Open Disc, is one inserted?")
         if out.startswith("DRV:0,2"):
             print("We Found a Disc!")
             disc.path = makemkv_config[1] + out.split(",")[5].replace('"','')

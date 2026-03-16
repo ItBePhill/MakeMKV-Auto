@@ -25,17 +25,19 @@ def Rip(disc):
         f"--directio={makemkv_config[5]}",
         disc.path
     ]
+    
     # create the output folder
     print(f"Creating: {disc.path}")
     if not os.path.exists(disc.path): os.mkdir(disc.path)
     # get the current time before ripping
     t1 = datetime.datetime.now()
+    print(f"Started rip at: {t1}")
     # rip the movie and continually grab output from stdout
     subpr = subprocess.Popen(args = makemkv_args, stdout = subprocess.PIPE)
     print("\n")
     #read the output as it comes in
     while subpr.poll() is None:     
-        outbytes = subpr.stdout.readline() # type: ignore This error is incorrect, the type is not None and therefore is being ignored
+        outbytes = subpr.stdout.readline() # type: ignore This error is erroneous, the type is not None and therefore is being ignored
         out = outbytes.decode("utf-8")
         if("PRGV:" in out):
             total = out.split(":")[1].split(",")[2]
@@ -45,8 +47,10 @@ def Rip(disc):
             print(out.split(",")[3].replace('"', ''))
         
     # get time after rip
+    t2 = datetime.datetime.now()
     # show results and then wait for another disc
-    
+    print(f"Rip finished at: {t2}")
+    print(f"Taking: {t2-t1}")
 
 
 
@@ -73,7 +77,7 @@ def WaitForDisc():
         try:
             disc = DiscInfo.GetDisc(makemkv_info_args, makemkv_config)
         except:
-            print("Waiting" + dots[x])
+            print("Waiting for a disc" + dots[x])
             x+=1
             continue
             
@@ -163,18 +167,18 @@ log_to_file = 1
 
 
     makemkv_config = [
-        makemkv_path,
-        makemkv_output,
-        makemkv_disc,
-        makemkv_cache_size,
-        makemkv_min_length,
-        makemkv_directio,
-        makemkv_extra_options,
-        log_to_file,
-        trayOpen,
-        disc_check_interval,
+        makemkv_path,           #0
+        makemkv_output,         #1
+        makemkv_disc,           #2
+        makemkv_cache_size,     #3
+        makemkv_min_length,     #4
+        makemkv_directio,       #5
+        makemkv_extra_options,  #6
+        log_to_file,            #7
+        trayOpen,               #8
+        disc_check_interval,    #9
     ]
-    
+    print(str(int(makemkv_config[2])))
     
     WaitForDisc()
         

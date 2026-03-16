@@ -27,30 +27,30 @@ def Rip(disc):
     ]
     
     # create the output folder
-    print(f"Creating: {disc.path}")
+    print(f"MSG|Creating: {disc.path}")
     if not os.path.exists(disc.path): os.mkdir(disc.path)
     # get the current time before ripping
     t1 = datetime.datetime.now()
-    print(f"Started rip at: {t1}")
+    print(f"MSG|Started rip at: {t1}")
     # rip the movie and continually grab output from stdout
     subpr = subprocess.Popen(args = makemkv_args, stdout = subprocess.PIPE)
     print("\n")
     #read the output as it comes in
     while subpr.poll() is None:     
-        outbytes = subpr.stdout.readline() # type: ignore This error is erroneous, the type is not None and therefore is being ignored
+        outbytes = subpr.stdout.readline() # type: ignore | This error is erroneous, the type is not None and therefore is being ignored
         out = outbytes.decode("utf-8")
         if("PRGV:" in out):
             total = out.split(":")[1].split(",")[2]
             current = out.split(":")[1].split(",")[0]
-            print(current + " / " +total + "\n")
+            print("PG|"+current + "/" +total + "\n")
         if out.startswith("MSG:"):
-            print(out.split(",")[3].replace('"', ''))
+            print("MSG|"+out.split(",")[3].replace('"', ''))
         
     # get time after rip
     t2 = datetime.datetime.now()
     # show results and then wait for another disc
-    print(f"Rip finished at: {t2}")
-    print(f"Taking: {t2-t1}")
+    print(f"MSG|Rip finished at: {t2}")
+    print(f"MSG|Taking: {t2-t1}")
 
 
 
@@ -77,12 +77,13 @@ def WaitForDisc():
         try:
             disc = DiscInfo.GetDisc(makemkv_info_args, makemkv_config)
         except:
-            print("Waiting for a disc" + dots[x])
+            print("MSG|Waiting for a disc" + dots[x])
+            print(f"PG|{x+1} / {3}")
             x+=1
             continue
             
         else:
-            print(f"Preparing to rip: {disc.name}")
+            print(f"MSG|Preparing to rip: {disc.name}")
             Rip(disc)
 
 

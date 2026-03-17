@@ -6,6 +6,7 @@ class Disc:
     name: str
     length: str
     path: str
+    titles: int
     
 
 def GetDisc(makemkv_info_args:list, makemkv_config:list):

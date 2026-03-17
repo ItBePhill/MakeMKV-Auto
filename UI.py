@@ -4,37 +4,44 @@ from tkinter import font
 import subprocess
 import threading
 
-root = ttk.Window(themename='darkly', iconphoto=None)
+root = ttk.Window(themename='cyborg', iconphoto=None)
 windowStr="MakeMKV-Auto"
 windowTitleStr:str = windowStr + " | N/A"
-titleStr:str = "N/A"
-subtitleStr:str = "N/A"
-logStr:str = "N/A"
-etaStr: str = "N/A"
-prgBarValue =  0
-prgBarMax = 100
+root.title(windowTitleStr)
+
+
+titleStr = "N/A"
+subtitleStr = "N/A"
+logStr = "N/A"
+etaStr =  "N/A"
+pgValue = 0
+pgMax = 0
 
 
 Width = 600
 Height = 150
 root.minsize(Width,Height)
-root.maxsize(Width,Height)
-titleFont = font.Font(root=root, name="title", family="Segoe UI", size=12, weight='bold')
-subtitleFont = font.Font(root=root, name="subtitle", family="Segoe UI", size=9, weight='normal')
-defaultFont = font.Font(root=root, name="default", family="Segoe UI", size=9, weight='normal')
+#root.maxsize(Width,Height)
+titleFont = font.Font(root, name="title", family="Segoe UI", size=12, weight='bold')
+subtitleFont = font.Font(root, name="subtitle", family="Segoe UI", size=9, weight='normal')
+defaultFont = font.Font(root, name="default", family="Segoe UI", size=9, weight='normal')
 frame = ttk.Frame(root)
-frame.pack(anchor="w", padx=10, pady=10)
-
-otherFrame = ttk.Frame(frame)
-otherFrame.grid(row=1, sticky="sw", pady=5)
+frame.pack(anchor="w", padx=10, pady=10, fill="both")
 titleframe = ttk.Frame(frame)
-titleframe.grid(row=0, sticky="nw", pady=5)
-title = ttk.Label(titleframe, text = titleStr, font = titleFont)
-subtitle =  ttk.Label(titleframe, text = subtitleStr, font=subtitleFont)
-progress = tk.IntVar()
-prgbar = ttk.Progressbar(otherFrame, variable=prgBarValue, maximum=prgBarMax, length=Width-50)
-log = ttk.Label(otherFrame, text = logStr, font=defaultFont)
-eta = ttk.Label(otherFrame, text=etaStr, font=defaultFont)
+titleframe.pack(fill="x", anchor="nw")
+otherFrame = ttk.Frame(frame)
+otherFrame.pack(fill="x", anchor="sw")
+
+titleVar = tk.StringVar(root, "N/A")
+title = ttk.Label(titleframe, textvariable=titleVar, font = titleFont)
+subtitleVar = tk.StringVar(root, "N/A")
+subtitle =  ttk.Label(titleframe, textvariable=subtitleVar, font=subtitleFont)
+pgVar = tk.IntVar(root, 0)
+prgbar = ttk.Progressbar(otherFrame, variable=pgVar, length=Width-50)
+logVar = tk.StringVar(root, "N/A")
+log = ttk.Label(otherFrame, textvariable = logVar, font=defaultFont)
+etaVar =  tk.StringVar(root, "N/A")
+eta = ttk.Label(otherFrame, textvariable=etaVar, font=defaultFont)
 title.grid(sticky="nw", row=0)  
 subtitle.grid(stick="nw", row=1)
 prgbar.grid(sticky="w", row=2, pady=2)
@@ -43,37 +50,49 @@ eta.grid(sticky="e", row=3, pady=2)
 
 
 #Start the process for the main program
-args = ["python", "main.py"]
+etaTime = None
+
+args = ["python", "main.test.py"]
 subpr = subprocess.Popen(args = args, stdout = subprocess.PIPE)     
 out = ""
 def run():
-    global out, logStr, subtitleStr, windowTitleStr, titleStr, etaStr, prgBarValue, prgBarMax
-    while True:
+    global out, titleStr, subtitleStr, logStr, etaStr, pgValue, pgMax
+    while subpr.poll() is None:
         out = subpr.stdout.readline().decode() #type:ignore
+        print(out)
+        if out.startswith("INF0|"):
+            titleStr = out.split("|")[1].replace("\n", "")
+        if out.startswith("INF2|"):
+            subtitleStr =  f"Saving to: {out.split("|")[1].replace("\n", "")}"
         if out.startswith("MSG|"):
-            logStr = out.split("|")[1]
-            #windowTitleStr = windowStr + " | " + out.split("|")[1]
+            logStr = out.split("|")[1].replace("\n", "")
         if out.startswith("PG|"):
-            print(out.split("|")[1])
-            prgBarValue = out.split("|")[1].split("/")[0]
-            prgBarMax = out.split("|")[1].split("/")[1]
+            # Source - https://stackoverflow.com/a/929104
+            pgValue = int(out.split("|")[1].split("/")[0])
+            
+            pgMax = int(out.split("|")[1].split("/")[1])
+            new_value = ( (pgValue - 0) / (pgMax - 0) ) * (100 - 0) + 0
+            pgValue = new_value
 
-thread = threading.Thread(target = run, name = "Main loop")
+           
+
+thread = threading.Thread(target = run, name = "GatherLoop")
 thread.start()
+
+def updateVars():
+    global logVar, subtitleVar, titleVar, etaVar, pgVar
+    titleVar.set(titleStr)
+    subtitleVar.set(subtitleStr)
+    pgVar.set(float(pgValue))
+    logVar.set(logStr)
+    etaVar.set(etaStr)
     
-def updateWidgets():
-    global progress
-    root.title(windowTitleStr)
-    title.configure(text=titleStr)
-    subtitle.configure(text=subtitleStr)
-    progress = prgBarValue
-    prgbar.configure(maximum=prgBarMax)
-    log.configure(text=logStr)
-    eta.configure(text=etaStr)
-#tcl main loop and program main loop
+
+#tk loop
 while True:
+    updateVars()
     root.update_idletasks()
     root.update()
-    updateWidgets()
+    
 
     

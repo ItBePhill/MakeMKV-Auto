@@ -20,7 +20,7 @@ def GetDisc(makemkv_info_args:list, makemkv_config:list):
         if out.startswith("DRV:0,1"):
             raise Exception("Failed to Open Disc, is one inserted?")
         if out.startswith("DRV:0,2"):
-            print("We Found a Disc!")
+            print("MSG|We Found a Disc!")
             disc.path = makemkv_config[1] + out.split(",")[5].replace('"','')
 
         if out.startswith("TINFO:0,2,0"):

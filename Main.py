@@ -4,6 +4,7 @@ import configparser
 import datetime
 import os
 import time
+import open_tray
 makemkv_config:list
 
 
@@ -27,24 +28,27 @@ def Rip(disc):
     ]
     
     # create the output folder
-    print(f"MSG|Creating: {disc.path}", flush=True)
+    print(f"MSG|Creating: {disc.path}")
     if not os.path.exists(disc.path): os.mkdir(disc.path)
     # get the current time before ripping
     t1 = datetime.datetime.now()
-    print(f"MSG|Started rip at: {t1}", flush=True)
+    print(f"MSG|Started rip at: {t1}")
     # rip the movie and continually grab output from stdout
     subpr = subprocess.Popen(args = makemkv_args, stdout = subprocess.PIPE)
+    print(f"Ripping: {disc.name}")
     print("\n")
     #read the output as it comes in
     while subpr.poll() is None:     
         outbytes = subpr.stdout.readline() # type: ignore | This error is erroneous, the type is not None and therefore is being ignored
         out = outbytes.decode("utf-8")
+        if("MSG:5014" in out):
+            print(f"TINF|{out.split(",")[3].split(" ")[1]}")
         if("PRGV:" in out):
             total = out.split(":")[1].split(",")[2]
             current = out.split(":")[1].split(",")[0]
-            print("PG|"+current + "/" +total + "\n", flush=True)
+            print("PG|"+current + "/" +total + "\n")
         if out.startswith("MSG:"):
-            print("MSG|"+out.split(",")[3].replace('"', ''), flush=True)
+            print("MSG|"+out.split(",")[3].replace('"', ''))
         
     # get time after rip
     t2 = datetime.datetime.now()
@@ -76,7 +80,11 @@ def WaitForDisc():
         #this will continuosly run GetDisc, which will either return a disc or throw an error
         try:
             disc = DiscInfo.GetDisc(makemkv_info_args, makemkv_config)
-        except:
+        except Exception as exc:
+            if "Failed to Open Disc, is one inserted?" in exc.args:
+                print("Didn't find a disc")
+            else:
+                print(exc.args)
             print("MSG|Waiting for a disc" + dots[x], flush=True)
             print(f"PG|{x+1} / {3}")
             x+=1
@@ -86,8 +94,11 @@ def WaitForDisc():
             print(f"INF0|{disc.name}")
             print(f"INF1|{disc.length}")
             print(f"INF2|{disc.path}")
+            print(f"INF3|{disc.titles}")
             print(f"MSG|Preparing to rip: {disc.name}", flush=True)
             Rip(disc)
+            open_tray.Run(disc.letter)
+            continue
 
 
 

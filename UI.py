@@ -74,7 +74,7 @@ args = ["python", "main.test.py"]
 subpr = subprocess.Popen(args = args, stdout = subprocess.PIPE)     
 out = ""
 def run():
-    global out, titleStr, subtitleStr, logStr, etaStr, pgValue, pgMax, elapsedStr
+    global out, titleStr, subtitleStr, logStr, etaStr, pgValue, pgMax, elapsedStr, windowTitleStr
     startTime:datetime.datetime = datetime.datetime.now()
     last_time = datetime.datetime.now()
     last_value = 0
@@ -85,6 +85,8 @@ def run():
         elapsedStr = datetime.timedelta(seconds=round(datetime.datetime.now().timestamp() - startTime.timestamp()))
         out = subpr.stdout.readline().decode() #type:ignore
         print(out)
+        if out.startswith("ST|"):
+            windowTitleStr = windowStr + out.split("|")[1].replace("\n", "")
         if out.startswith("INF0|"):
             titleStr = out.split("|")[1].replace("\n", "")
         if out.startswith("INF2|"):
@@ -131,9 +133,12 @@ def run():
             print(f"Time Elapsed: {elapsedStr}")
             print(f"Average Speed: {round(speed, 2)} u/{round(timeDiff, 2)}s")
             print(f"ETA: {etaStr}")
+
+            windowTitleStr = windowTitleStr
             last_value = new_value
             last_time = datetime.datetime.now()
             last_speed = speed
+
 
 
             
@@ -156,6 +161,7 @@ def updateVars():
     logVar.set(logStr)
     etaVar.set(etaStr)
     elapsedVar.set(str(elapsedStr))
+    root.title(windowTitleStr)
     
 
 #tk loop

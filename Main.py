@@ -3,6 +3,7 @@ import subprocess
 import configparser
 import datetime
 import os
+import psutil
 import time
 import open_tray
 makemkv_config:list
@@ -38,7 +39,8 @@ def Rip(disc):
     print(f"Ripping: {disc.name}")
     print("\n")
     #read the output as it comes in
-    while subpr.poll() is None:     
+    while subpr.poll() is None:    
+        print(f"MI|{round(psutil.Process(subpr.pid).memory_info()[0] / 1000000, 2)} MB") 
         outbytes = subpr.stdout.readline() # type: ignore | This error is erroneous, the type is not None and therefore is being ignored
         out = outbytes.decode("utf-8")
         if("MSG:5014" in out):
@@ -55,6 +57,7 @@ def Rip(disc):
     # show results and then wait for another disc
     print(f"MSG|Rip finished at: {t2}", flush=True)
     print(f"MSG|Taking: {t2-t1}", flush=True)
+    open_tray.Run(disc.letter)
 
 
 

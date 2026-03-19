@@ -1,6 +1,7 @@
 import os
 import subprocess
 import tempfile
+
 #Class that holds all the information about a disc e.g. the id, name, size
 class Disc:
     name: str
@@ -18,6 +19,7 @@ def GetDisc(makemkv_info_args:list, makemkv_config:list):
     while subpr.poll() is None:     
         outbytes = subpr.stdout.readline() # type: ignore
         out = outbytes.decode("utf-8")
+        
         if out.startswith("DRV:0,1"):
             raise Exception("Failed to Open Disc, is one inserted?")
         if out.startswith("DRV:0,2"):

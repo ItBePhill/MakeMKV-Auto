@@ -35,6 +35,7 @@ etaStr =  "N/A"
 pgValue = 0
 pgMax = 0
 elapsedStr = "N/A"
+memStr = "N/A"
 
 Width = 650
 Height = 150
@@ -64,12 +65,15 @@ etaVar =  tk.StringVar(root, "N/A")
 eta = ttk.Label(otherFrame, textvariable=etaVar, font=defaultFont)
 elapsedVar =  tk.StringVar(root, "N/A")
 elapsed = ttk.Label(otherFrame, textvariable=elapsedVar, font=defaultFont)
+memVar = tk.StringVar(otherFrame, "N/A")
+mem = ttk.Label(otherFrame, textvariable=memVar, font=defaultFont)
 title.grid(sticky="nw", row=0)  
 subtitle.grid(sticky="ew", row=1)
 prgbar1.grid(sticky="w", row=2, pady=2)
 log.grid(sticky="w", row=4)
 eta.grid(sticky="e", row=4, pady=2)
 elapsed.grid(sticky="nse", row=4, pady=2, padx=70)
+mem.grid(sticky="w", row=5, pady=2)
 
 
 #Start the process for the main program
@@ -77,7 +81,7 @@ args = ["python", "main.py"]
 subpr = subprocess.Popen(args = args, stdout = subprocess.PIPE)     
 out = ""
 def run():
-    global out, titleStr, subtitleStr, logStr, etaStr, pgValue, pgMax, elapsedStr, windowTitleStr
+    global out, titleStr, subtitleStr, logStr, etaStr, pgValue, pgMax, elapsedStr, windowTitleStr, memStr
     startTime:datetime.datetime = datetime.datetime.now()
     last_time = datetime.datetime.now()
     last_value = 0
@@ -87,7 +91,8 @@ def run():
     while subpr.poll() is None:
         elapsedStr = datetime.timedelta(seconds=round(datetime.datetime.now().timestamp() - startTime.timestamp()))
         out = subpr.stdout.readline().decode() #type:ignore
-        print(out)
+        if out.startswith("MI|"):
+            memStr = out.split("|")[1]
         if out.startswith("INF0|"):
             titleStr = out.split("|")[1]
         if out.startswith("INF2|"):
@@ -155,13 +160,14 @@ thread.start()
 
 #main thread has to be in tk loop so we update the widgets from the tk loop
 def updateVars():
-    global logVar, subtitleVar, titleVar, etaVar, pgVar, elapsedVar
+    global logVar, subtitleVar, titleVar, etaVar, pgVar, elapsedVar, memVar
     titleVar.set(cleanStr(truncateStr(titleStr)))
     subtitleVar.set(cleanStr(truncateStr(subtitleStr, Width-40)))
     pgVar.set(int(pgValue))
-    logVar.set(cleanStr(truncateStr(logStr, 40)))
+    logVar.set(cleanStr(truncateStr(logStr, 60)))
     etaVar.set(cleanStr(truncateStr(etaStr)))
     elapsedVar.set(cleanStr(truncateStr(str(elapsedStr))))
+    memVar.set(cleanStr(truncateStr(f"Mem Usage: {memStr}")))
     root.title(windowTitleStr)
     
 

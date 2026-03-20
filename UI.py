@@ -16,14 +16,15 @@ TODO:
 
 
     - Calculate and show the ETA //
-    - Get and show how many titles there are and which we are currently ripping /
-    - change the window title to ripping if we are ripping and waiting if we are waiting
+    - Get and show how many titles there are and which we are currently ripping //
 """
+def truncateStr(string:str, maxLength=400):
+    return string if len(string) <= maxLength else string[:maxLength-3] + "..."
 
-
+def cleanStr(string:str):
+    return string.replace("\n", "").replace("\r", "")
 root = ttk.Window(themename='darkly', iconphoto=None)
-windowStr="MakeMKV-Auto | "
-windowTitleStr:str = windowStr + ""
+windowTitleStr:str = "MakeMKV-Auto"
 root.title(windowTitleStr)
 
 
@@ -34,8 +35,9 @@ etaStr =  "N/A"
 pgValue = 0
 pgMax = 0
 elapsedStr = "N/A"
+memStr = "N/A"
 
-Width = 600
+Width = 650
 Height = 150
 root.minsize(Width,Height)
 root.maxsize(Width,Height)
@@ -46,35 +48,40 @@ frame = ttk.Frame(root)
 frame.pack(anchor="w", padx=10, pady=10, fill="both")
 titleframe = ttk.Frame(frame)
 titleframe.pack(fill="x", anchor="nw")
+titleframe.columnconfigure(0, weight=1)
 otherFrame = ttk.Frame(frame)
 otherFrame.pack(fill="x", anchor="sw")
 
 titleVar = tk.StringVar(root, "N/A")
 title = ttk.Label(titleframe, textvariable=titleVar, font = titleFont)
 subtitleVar = tk.StringVar(root, "N/A")
-subtitle =  ttk.Label(titleframe, textvariable=subtitleVar, font=subtitleFont, wraplength=9000)
+subtitle =  ttk.Label(titleframe, textvariable=subtitleVar, font=subtitleFont, wraplength=Width-40)
 pgVar = tk.IntVar(root, 0)
-prgbar = ttk.Progressbar(otherFrame, variable=pgVar, length=Width-50)
+prgbar1 = ttk.Progressbar(otherFrame, variable=pgVar, length=Width-50)
+prgbar2 = ttk.Progressbar(otherFrame, variable=pgVar, length=Width-50)
 logVar = tk.StringVar(root, "N/A")
-log = ttk.Label(otherFrame, textvariable = logVar, font=defaultFont, width=30)
+log = ttk.Label(otherFrame, textvariable = logVar, font=defaultFont)
 etaVar =  tk.StringVar(root, "N/A")
 eta = ttk.Label(otherFrame, textvariable=etaVar, font=defaultFont)
 elapsedVar =  tk.StringVar(root, "N/A")
 elapsed = ttk.Label(otherFrame, textvariable=elapsedVar, font=defaultFont)
+memVar = tk.StringVar(otherFrame, "N/A")
+mem = ttk.Label(otherFrame, textvariable=memVar, font=defaultFont)
 title.grid(sticky="nw", row=0)  
-subtitle.grid(stick="nw", row=1)
-prgbar.grid(sticky="w", row=2, pady=2)
-log.grid(sticky="w", row=3)
-eta.grid(sticky="e", row=3, pady=2)
-elapsed.grid(sticky="nse", row=3, pady=2, padx=70)
+subtitle.grid(sticky="ew", row=1)
+prgbar1.grid(sticky="w", row=2, pady=2)
+log.grid(sticky="w", row=4)
+eta.grid(sticky="e", row=4, pady=2)
+elapsed.grid(sticky="nse", row=4, pady=2, padx=70)
+mem.grid(sticky="w", row=5, pady=2)
 
 
 #Start the process for the main program
-args = ["python", "main.test.py"]
+args = ["python", "main.py"]
 subpr = subprocess.Popen(args = args, stdout = subprocess.PIPE)     
 out = ""
 def run():
-    global out, titleStr, subtitleStr, logStr, etaStr, pgValue, pgMax, elapsedStr, windowTitleStr
+    global out, titleStr, subtitleStr, logStr, etaStr, pgValue, pgMax, elapsedStr, windowTitleStr, memStr
     startTime:datetime.datetime = datetime.datetime.now()
     last_time = datetime.datetime.now()
     last_value = 0
@@ -84,19 +91,19 @@ def run():
     while subpr.poll() is None:
         elapsedStr = datetime.timedelta(seconds=round(datetime.datetime.now().timestamp() - startTime.timestamp()))
         out = subpr.stdout.readline().decode() #type:ignore
-        print(out)
-        if out.startswith("ST|"):
-            windowTitleStr = windowStr + out.split("|")[1].replace("\n", "")
+        if out.startswith("MI|"):
+            memStr = out.split("|")[1]
         if out.startswith("INF0|"):
-            titleStr = out.split("|")[1].replace("\n", "")
+            titleStr = out.split("|")[1]
         if out.startswith("INF2|"):
-            path =  f"Saving to: {out.split("|")[1].replace("\n", "")}"
+            path =  f"{out.split("|")[1]}"
         if out.startswith("INF3|"):
-            total = out.split("|")[1].replace("\n", "")
+            total = out.split("|")[1]
         if out.startswith("TINF|"):
-            subtitleStr = f"Saving: {out.split("|")[1].replace("\n", "")} of {total} title(s) to: {path}"
+            titleInfo = out.split("|")[1]
+            subtitleStr = f"Saving: {titleInfo} of {total} title(s) to: {path}"
         if out.startswith("MSG|"):
-            logStr = out.split("|")[1].replace("\n", "")
+            logStr = out.split("|")[1]
         if out.startswith("PG|"):  
             pgValue = int(out.split("|")[1].split("/")[0])
             pgMax = int(out.split("|")[1].split("/")[1])
@@ -134,7 +141,6 @@ def run():
             print(f"Average Speed: {round(speed, 2)} u/{round(timeDiff, 2)}s")
             print(f"ETA: {etaStr}")
 
-            windowTitleStr = windowTitleStr
             last_value = new_value
             last_time = datetime.datetime.now()
             last_speed = speed
@@ -157,13 +163,14 @@ thread.start()
 
 #main thread has to be in tk loop so we update the widgets from the tk loop
 def updateVars():
-    global logVar, subtitleVar, titleVar, etaVar, pgVar, elapsedVar
-    titleVar.set(titleStr)
-    subtitleVar.set(subtitleStr)
+    global logVar, subtitleVar, titleVar, etaVar, pgVar, elapsedVar, memVar
+    titleVar.set(cleanStr(truncateStr(titleStr)))
+    subtitleVar.set(cleanStr(truncateStr(subtitleStr, Width-40)))
     pgVar.set(int(pgValue))
-    logVar.set(logStr)
-    etaVar.set(etaStr)
-    elapsedVar.set(str(elapsedStr))
+    logVar.set(cleanStr(truncateStr(logStr, 60)))
+    etaVar.set(cleanStr(truncateStr(etaStr)))
+    elapsedVar.set(cleanStr(truncateStr(str(elapsedStr))))
+    memVar.set(cleanStr(truncateStr(f"Mem Usage: {memStr}")))
     root.title(windowTitleStr)
     
 

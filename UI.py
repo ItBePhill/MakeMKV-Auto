@@ -139,6 +139,9 @@ def run():
             last_time = datetime.datetime.now()
             last_speed = speed
 
+            #percentage, eta, elapsed
+            windowTitleStr = f"{new_value.__floor__()}% | {etaStr} | {elapsedStr}"
+
 
 
             

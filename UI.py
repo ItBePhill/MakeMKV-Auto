@@ -4,7 +4,8 @@ from tkinter import font
 import subprocess
 import threading
 import datetime
-
+from PyTaskbar import TaskbarProgress, ProgressType
+import time
 """
 TODO:
  -----------
@@ -80,8 +81,11 @@ mem.grid(sticky="w", row=5, pady=2)
 args = ["python", "main.test.py"]
 subpr = subprocess.Popen(args = args, stdout = subprocess.PIPE)     
 out = ""
+progress = TaskbarProgress(root.winfo_id())
+progress.set_progress_type(ProgressType.NORMAL)
+down = False
 def run():
-    global out, titleStr, subtitleStr, logStr, etaStr, pgValue, pgMax, elapsedStr, windowTitleStr, memStr
+    global out, titleStr, subtitleStr, logStr, etaStr, pgValue, pgMax, elapsedStr, windowTitleStr, memStr, progress
     startTime:datetime.datetime = datetime.datetime.now()
     last_time = datetime.datetime.now()
     last_value = 0
@@ -89,6 +93,8 @@ def run():
     path = "0"
     total = "0"
     while subpr.poll() is None:
+        if down:
+            return
         elapsedStr = datetime.timedelta(seconds=round(datetime.datetime.now().timestamp() - startTime.timestamp()))
         out = subpr.stdout.readline().decode() #type:ignore
         if out.startswith("MI|"):
@@ -113,6 +119,7 @@ def run():
 
             print(f"Percentage: {new_value.__floor__()}%")
             pgValue = new_value
+            progress.set_progress(int(new_value))
             #calculate average speed
             valueDiff = new_value - last_value
             timeDiff = datetime.datetime.now().timestamp() - last_time.timestamp()
@@ -158,9 +165,8 @@ def run():
 #since tkinter is single threaded we can't gather info in the main loop
 #so we need to create a new thread for it           
 #we create a thread to gather the info from stdout
-thread = threading.Thread(target = run, name = "GatherThread")
+thread = threading.Thread(target = run, name = "GatherThread", daemon=False)
 thread.start()
-
 #main thread has to be in tk loop so we update the widgets from the tk loop
 def updateVars():
     global logVar, subtitleVar, titleVar, etaVar, pgVar, elapsedVar, memVar
@@ -171,14 +177,24 @@ def updateVars():
     etaVar.set(cleanStr(truncateStr(etaStr)))
     elapsedVar.set(cleanStr(truncateStr(str(elapsedStr))))
     memVar.set(cleanStr(truncateStr(f"Mem Usage: {memStr}")))
-    root.title(windowTitleStr)
+    try:
+        root.title(windowTitleStr)
+    except:
+        return
     
 
 #tk loop
+def shutdown():
+    global down
+    down = True
+    
+
+root.bind("<Destroy>", lambda: shutdown())
+
 while True:
-    updateVars()
     root.update_idletasks()
     root.update()
+    updateVars()
     
 
     

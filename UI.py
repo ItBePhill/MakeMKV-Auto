@@ -77,7 +77,7 @@ mem.grid(sticky="w", row=5, pady=2)
 
 
 #Start the process for the main program
-args = ["python", "main.py"]
+args = ["python", "main.test.py"]
 subpr = subprocess.Popen(args = args, stdout = subprocess.PIPE)     
 out = ""
 def run():
@@ -145,8 +145,8 @@ def run():
             last_time = datetime.datetime.now()
             last_speed = speed
 
-            #percentage, eta, elapsed
-            windowTitleStr = f"{new_value.__floor__()}% | {etaStr} | {elapsedStr}"
+            #percentage, elapsed, eta
+            windowTitleStr = f"{new_value.__floor__()}% | {elapsedStr} | {etaStr}"
 
 
 

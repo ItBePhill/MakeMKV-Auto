@@ -24,5 +24,6 @@ for i in range(0,max, 20):
     
     print(f"MSG|This is a test message {i}")
     print(f"PG|{i}/{max}")
+    print(f"MI|10 MB")
     time.sleep(random.randint(0, 50)/100)
     

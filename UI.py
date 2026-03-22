@@ -189,7 +189,7 @@ def shutdown():
     down = True
     
 
-root.bind("<Destroy>", lambda: shutdown())
+
 
 while True:
     root.update_idletasks()

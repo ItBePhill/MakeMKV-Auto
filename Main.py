@@ -8,10 +8,13 @@ import time
 import open_tray
 makemkv_config:list
 
-
+def Cancel():
+    if subpr.poll() is None:
+        subpr.kill()
 
 
 def Rip(disc):
+    global subpr
     # compile the args
     makemkv_args = [
         f"{makemkv_config[0]}makemkvcon64",
@@ -204,4 +207,3 @@ log_to_file = 1
     
 
 
-Startup()

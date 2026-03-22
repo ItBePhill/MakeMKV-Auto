@@ -6,6 +6,7 @@ import threading
 import datetime
 from PyTaskbar import TaskbarProgress, ProgressType
 import time
+import main
 """
 TODO:
  -----------
@@ -18,12 +19,27 @@ TODO:
 
     - Calculate and show the ETA //
     - Get and show how many titles there are and which we are currently ripping //
+    - implement being able to cancel a rip and fix closing the program
 """
 def truncateStr(string:str, maxLength=400):
     return string if len(string) <= maxLength else string[:maxLength-3] + "..."
 
 def cleanStr(string:str):
     return string.replace("\n", "").replace("\r", "")
+
+def cancelMakeMKV():
+    global out, titleStr, subtitleStr, logStr, etaStr, pgValue, pgMax, elapsedStr, windowTitleStr, memStr, progress
+    titleStr = "Waiting for Disc..."
+    subtitleStr = "Waiting for Disc..."
+    logStr = "Waiting for Disc..."
+    etaStr =  "N/A"
+    pgValue = 0
+    pgMax = 0
+    elapsedStr = "N/A"
+    memStr = "N/A"
+    main.Cancel()
+    
+
 root = ttk.Window(themename='darkly', iconphoto=None)
 windowTitleStr:str = "MakeMKV-Auto"
 root.title(windowTitleStr)
@@ -68,6 +84,7 @@ elapsedVar =  tk.StringVar(root, "N/A")
 elapsed = ttk.Label(otherFrame, textvariable=elapsedVar, font=defaultFont)
 memVar = tk.StringVar(otherFrame, "N/A")
 mem = ttk.Label(otherFrame, textvariable=memVar, font=defaultFont)
+cancelButton = ttk.Button(otherFrame, text="Cancel", command=cancelMakeMKV)
 title.grid(sticky="nw", row=0)  
 subtitle.grid(sticky="ew", row=1)
 prgbar1.grid(sticky="w", row=2, pady=2)
@@ -75,10 +92,11 @@ log.grid(sticky="w", row=4)
 eta.grid(sticky="e", row=4, pady=2)
 elapsed.grid(sticky="nse", row=4, pady=2, padx=70)
 mem.grid(sticky="w", row=5, pady=2)
+cancelButton.grid(sticky="e", row=5)
 
 
 #Start the process for the main program
-args = ["python", "main.test.py"]
+args = ["python", "main.py"]
 subpr = subprocess.Popen(args = args, stdout = subprocess.PIPE)     
 out = ""
 progress = TaskbarProgress(root.winfo_id())
@@ -86,6 +104,7 @@ progress.set_progress_type(ProgressType.NORMAL)
 down = False
 def run():
     global out, titleStr, subtitleStr, logStr, etaStr, pgValue, pgMax, elapsedStr, windowTitleStr, memStr, progress
+    main.Startup()
     startTime:datetime.datetime = datetime.datetime.now()
     last_time = datetime.datetime.now()
     last_value = 0
@@ -185,9 +204,9 @@ def updateVars():
 
 #tk loop
 def shutdown():
-    global down
-    down = True
+    cancelMakeMKV()
     
+
 
 
 
@@ -195,6 +214,9 @@ while True:
     root.update_idletasks()
     root.update()
     updateVars()
+
+
+
     
 
     

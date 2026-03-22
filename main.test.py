@@ -1,6 +1,7 @@
 import time
 import os
 import random
+import open_tray
 #this script is just for testing the ui
 #will simulate stdout for the real program
 discname="Test Disc"
@@ -25,4 +26,5 @@ for i in range(0,max, 20):
     print(f"PG|{i}/{max-1}")
     print(f"MI|10 MB")
     time.sleep(random.randint(0, 50)/100)
+
     

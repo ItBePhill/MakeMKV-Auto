@@ -1,7 +1,7 @@
 import os
 import subprocess
 import tempfile
-import UIV2
+import UI
 
 #Class that holds all the information about a disc e.g. the id, name, size
 class Disc:

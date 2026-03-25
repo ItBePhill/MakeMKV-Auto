@@ -1,255 +1,198 @@
 import tkinter as tk
-import ttkbootstrap as ttk
 from tkinter import font
-import subprocess
+import ttkbootstrap as ttk
 import threading
 import datetime
 from PyTaskbar import TaskbarProgress, ProgressType
-import time
-import asyncio
-"""
-TODO:
- -----------
-| key:      |
-| / = doing |
-| // = done |
-|           |
- -----------
 
-
-    - Calculate and show the ETA //
-    - Get and show how many titles there are and which we are currently ripping //
-    - implement being able to cancel a rip and fix closing the program
-"""
 def truncateStr(string:str, maxLength=400):
     return string if len(string) <= maxLength else string[:maxLength-3] + "..."
 
 def cleanStr(string:str):
     return string.replace("\n", "").replace("\r", "")
+        
+
+
+def Cancel():
+    global header
+    header.updater = Updater()
+    header.ui.reset()
+    header.running = False
+class UI:
+    def __init__(self):
+        self.waiting:bool = True
+        #---------- String Variables ---------
+        self.titleStr = "Looking For a Disc..."
+        self.subtitleStr = "Looking For a Disc..."
+        self.pValue = 0
+        self.logStr = "Looking For a Disc..."
+        self.etaStr = "0:00:00"
+        self.elapsedStr = "0:00:00"
+        self.memStr = "0 MB"
+        self.windowTitleStr = "MakeMKV-Auto"
+        self.Width:int = 650
+        self.Height:int = 170
+        #---------- TK ----------
+        self.root = ttk.Window(themename="darkly")
+        self.root.minsize(self.Width,self.Height)
+        self.root.maxsize(self.Width,self.Height)
+        #--------- Fonts ----------
+        self.titleFont = font.Font(self.root, name="title", family="Segoe UI", size=12, weight='bold')
+        self.subtitleFont = font.Font(self.root, name="subtitle", family="Segoe UI", size=9, weight='normal')
+        self.defaultFont = font.Font(self.root, name="default", family="Segoe UI", size=9, weight='normal')
+        #---------- TK Variables --------
+        self._titleVar = tk.StringVar()
+        self._subtitleVar = tk.StringVar()
+        self._logVar = tk.StringVar()
+        self._etaVar = tk.StringVar()
+        self._pVar = tk.IntVar()
+        self._elapsedVar = tk.StringVar()
+        self._memVar = tk.StringVar()
+        #--------- TK Widgets ----------
+        self.mainFrame = ttk.Frame(self.root)
+        self.titleFrame = ttk.Frame(self.mainFrame)
+        self.otherFrame = ttk.Frame(self.mainFrame)
+        self.title = ttk.Label(self.titleFrame, textvariable=self._titleVar, font = self.titleFont)
+        self.subtitle =  ttk.Label(self.titleFrame, textvariable=self._subtitleVar, font=self.subtitleFont, wraplength=self.Width-40)
+        self.pBar = ttk.Progressbar(self.otherFrame, variable=self._pVar, length=self.Width-50, mode="indeterminate")
+        self.log = ttk.Label(self.otherFrame, textvariable = self._logVar, font=self.defaultFont)
+        self.eta = ttk.Label(self.otherFrame, textvariable=self._etaVar, font=self.defaultFont)
+        self.elapsed = ttk.Label(self.otherFrame, textvariable=self._elapsedVar, font=self.defaultFont)
+        self.mem = ttk.Label(self.otherFrame, textvariable=self._memVar, font=self.defaultFont)
+        self.cancelButton = ttk.Button(self.otherFrame, text="Abort", command=Cancel)
+        
+        #place all of the widgets
+        self.mainFrame.pack(anchor="w", padx=10, pady=10, fill="both")
+        self.titleFrame.pack(fill="x", anchor="nw")
+        self.otherFrame.pack(fill="x", anchor="sw")
+        self.title.grid(sticky="nw", row=0)  
+        self.subtitle.grid(sticky="ew", row=1)
+        self.pBar.grid(sticky="w", row=2, pady=2)
+        self.log.grid(sticky="w", row=4)
+        self.eta.grid(sticky="e", row=4, pady=2)
+        self.elapsed.grid(sticky="nse", row=4, pady=2, padx=70)
+        self.mem.grid(sticky="w", row=5, pady=2)
+        self.cancelButton.grid(sticky="e", row=5, pady=2)
+       
+    def reset(self):
+        self.titleStr = "Looking For a Disc..."
+        self.subtitleStr = "Looking For a Disc..."
+        self.pValue = 0
+        self.logStr = "Looking For a Disc..."
+        self.etaStr = "0:00:00"
+        self.elapsedStr = "0:00:00"
+        self.memStr = "0 MB"
+        self.windowTitleStr = "MakeMKV-Auto"
+        self.waiting = True
+        
+
+#an instance of this class will be called every time we start a new task
 class Updater:
-    def __init__():
-        progress = TaskbarProgress(root.winfo_id())
-        progress.set_progress_type(ProgressType.NORMAL)
-        startTime = datetime.datetime.now()
-        last_time = datetime.datetime.now()
-        last_value = 0
-        last_speed = 0
-        path = "0"
-        total = "0"
+    def __init__(self):
+        self.startTime = datetime.datetime.now()
+        self.last_time = datetime.datetime.now()
+        self.last_value = 0
+        self.last_speed = 0
+        self.path = ""
+        self.total = 0
 
-#initialize the UI
-async def Init():
-    global titleStr, subtitleStr, logStr, etaStr, pgValue, pgMax, elapsedStr, memStr, Width, Height, root, windowTitleStr, progress, startTime, last_time, last_speed, last_value, path, total
-    print("Initializing UI")
-    root = ttk.Window(themename='darkly', iconphoto=None)
-    windowTitleStr = "MakeMKV-Auto"
-    root.title(windowTitleStr)
+def logMsg(logStr):
+    ui = header.ui
+    ui.logStr = logStr
+def Update(title, subtitle, log, value, mem, maxVal):
+        ui = header.ui
+        ui.titleStr = title
+        ui.subtitleStr = subtitle
+        updater = header.updater
+        ui.logStr = log
+        ui.memStr = mem
+        # Source - https://stackoverflow.com/a/929104
+        new_value = ((value - 0) / (maxVal - 0) ) * (100 - 0) + 0
+        print("\n\n\n")
 
+        print(f"Percentage: {int(new_value)}%")
+        # pgValue = new_value
+        # progress.setself._progress(int(new_value))
+        #calculate average speed
+        valueDiff = new_value - updater.last_value
+        timeDiff = datetime.datetime.now().timestamp() - updater.last_time.timestamp()
+        #we progressed valuediff amount in timeDiff time
+        # e.g. 1 unit in 1 second
+        ui.pValue = int(new_value)
 
-    titleStr = "Waiting for Disc..."
-    subtitleStr = "Waiting for Disc..."
-    logStr = "Waiting for Disc..."
-    etaStr =  "N/A"
-    pgValue = 0
-    pgMax = 0
-    elapsedStr = "N/A"
-    memStr = "N/A"
+        smoothing = .1
+        speed = valueDiff / timeDiff if timeDiff > 0 else 0
+        if speed <=0:
+            smoothed_speed = updater.last_speed
 
-    Width = 650
-    Height = 150
-    root.minsize(Width,Height)
-    root.maxsize(Width,Height)
-    titleFont = font.Font(root, name="title", family="Segoe UI", size=12, weight='bold')
-    subtitleFont = font.Font(root, name="subtitle", family="Segoe UI", size=9, weight='normal')
-    defaultFont = font.Font(root, name="default", family="Segoe UI", size=9, weight='normal')
-    frame = ttk.Frame(root)
-    frame.pack(anchor="w", padx=10, pady=10, fill="both")
-    titleframe = ttk.Frame(frame)
-    titleframe.pack(fill="x", anchor="nw")
-    titleframe.columnconfigure(0, weight=1)
-    otherFrame = ttk.Frame(frame)
-    otherFrame.pack(fill="x", anchor="sw")
+        else:
+            smoothed_speed = smoothing * speed + (1-smoothing) * updater.last_speed
+        
+        speed = smoothed_speed
 
-    titleVar = tk.StringVar(root, "N/A")
-    title = ttk.Label(titleframe, textvariable=titleVar, font = titleFont)
-    subtitleVar = tk.StringVar(root, "N/A")
-    subtitle =  ttk.Label(titleframe, textvariable=subtitleVar, font=subtitleFont, wraplength=Width-40)
-    pgVar = tk.IntVar(root, 0)
-    prgbar1 = ttk.Progressbar(otherFrame, variable=pgVar, length=Width-50)
-    logVar = tk.StringVar(root, "N/A")
-    log = ttk.Label(otherFrame, textvariable = logVar, font=defaultFont)
-    etaVar =  tk.StringVar(root, "N/A")
-    eta = ttk.Label(otherFrame, textvariable=etaVar, font=defaultFont)
-    elapsedVar =  tk.StringVar(root, "N/A")
-    elapsed = ttk.Label(otherFrame, textvariable=elapsedVar, font=defaultFont)
-    memVar = tk.StringVar(otherFrame, "N/A")
-    mem = ttk.Label(otherFrame, textvariable=memVar, font=defaultFont)
-    #cancelButton = ttk.Button(otherFrame, text="Cancel", command=cancelMakeMKV)
-    title.grid(sticky="nw", row=0)  
-    subtitle.grid(sticky="ew", row=1)
-    prgbar1.grid(sticky="w", row=2, pady=2)
-    log.grid(sticky="w", row=4)
-    eta.grid(sticky="e", row=4, pady=2)
-    elapsed.grid(sticky="nse", row=4, pady=2, padx=70)
-    mem.grid(sticky="w", row=5, pady=2)
-    #cancelButton.grid(sticky="e", row=5)
-    
+        if speed <= 0:
+            etaTime = 0
+        else:
+            remaining = 100 - new_value 
+            etaTime = remaining / speed
+
+        ui.etaStr = str(datetime.timedelta(seconds=int(etaTime)))
+        print(f"Time Elapsed: {ui.elapsedStr}")
+        print(f"Average Speed: {round(speed, 2)} u/{round(timeDiff, 2)}s")
+        print(f"ETA: {ui.etaStr}")
 
 
-#
-async def Update(title, subtitle, Log, pgValue, pgMax, mem):
-    global titleStr, subtitleStr, logStr, etaStr, elapsedStr, memStr, progress, windowTitleStr, last_value, last_speed, last_time
-    titleStr = title
-    subtitleStr = subtitle
-    logStr = Log
-    # Source - https://stackoverflow.com/a/929104
-    new_value = ((pgValue - 0) / (pgMax - 0) ) * (100 - 0) + 0
-    print("\n\n\n")
+        ui.windowTitleStr = f"{int(new_value)}% | {ui.elapsedStr} | {ui.etaStr}"
+        updater.last_value = int(new_value)
+        updater.last_time = datetime.datetime.now()
+        updater.last_speed = int(speed)
+class uiHeader:
+    running:bool = True
+    updater:Updater
+    ui:UI
+    def __init__(self):
+        self.running:bool = True
+        self.updater:Updater
+        self.ui:UI
+header:uiHeader
 
-    print(f"Percentage: {new_value.__floor__()}%")
-    # pgValue = new_value
-    # progress.set_progress(int(new_value))
-    #calculate average speed
-    valueDiff = new_value - last_value
-    timeDiff = datetime.datetime.now().timestamp() - last_time.timestamp()
-    #we progressed valuediff amount in timeDiff time
-    # e.g. 1 unit in 1 second
-    
 
-    smoothing = .1
-    speed = valueDiff / timeDiff if timeDiff > 0 else 0
-    if speed <=0:
-        smoothed_speed = last_speed
 
-    else:
-        smoothed_speed = smoothing * speed + (1-smoothing) * last_speed
-    
-    speed = smoothed_speed
+def Init():
+    global header
+    header = uiHeader()
+    header.updater = Updater()
+    header.ui = UI()
 
-    if speed <= 0:
-        etaTime = 0
-    else:
-        remaining = 100 - new_value 
-        etaTime = remaining / speed
-
-    etaStr = str(datetime.timedelta(seconds=int(etaTime)))
-    print(f"Time Elapsed: {elapsedStr}")
-    print(f"Average Speed: {round(speed, 2)} u/{round(timeDiff, 2)}s")
-    print(f"ETA: {etaStr}")
-
-    last_value = new_value
-    last_time = datetime.datetime.now()
-    last_speed = speed
-
-    #percentage, elapsed, eta
-    windowTitleStr = f"{new_value.__floor__()}% | {elapsedStr} | {etaStr}"
-    
-
-down = False
-# def run():
-#     global out, titleStr, subtitleStr, logStr, etaStr, pgValue, pgMax, elapsedStr, windowTitleStr, memStr, progress
-#     main.Startup()
-
-#     while subpr.poll() is None:
-#         if down:
-#             return
-#         elapsedStr = datetime.timedelta(seconds=round(datetime.datetime.now().timestamp() - startTime.timestamp()))
-#         out = subpr.stdout.readline().decode() #type:ignore
-#         if out.startswith("MI|"):
-#             memStr = out.split("|")[1]
-#         if out.startswith("INF0|"):
-#             titleStr = out.split("|")[1]
-#         if out.startswith("INF2|"):
-#             path =  f"{out.split("|")[1]}"
-#         if out.startswith("INF3|"):
-#             total = out.split("|")[1]
-#         if out.startswith("TINF|"):
-#             titleInfo = out.split("|")[1]
-#             subtitleStr = f"Saving: {titleInfo} of {total} title(s) to: {path}"
-#         if out.startswith("MSG|"):
-#             logStr = out.split("|")[1]
-#         if out.startswith("PG|"):  
-#             pgValue = int(out.split("|")[1].split("/")[0])
-#             pgMax = int(out.split("|")[1].split("/")[1])
-#             # Source - https://stackoverflow.com/a/929104
-#             new_value = ((pgValue - 0) / (pgMax - 0) ) * (100 - 0) + 0
-#             print("\n\n\n")
-
-#             print(f"Percentage: {new_value.__floor__()}%")
-#             pgValue = new_value
-#             progress.set_progress(int(new_value))
-#             #calculate average speed
-#             valueDiff = new_value - last_value
-#             timeDiff = datetime.datetime.now().timestamp() - last_time.timestamp()
-#             #we progressed valuediff amount in timeDiff time
-#             # e.g. 1 unit in 1 second
+def _TkUpdate():
+    ui = header.ui
+    while True:
+        try: 
+            ui.root.winfo_exists()
+        except:
+            print("Couldn't find the window... Closing")
+            quit()
+        #update widgets
+        ui._titleVar.set(cleanStr(truncateStr(ui.titleStr)))
+        ui._subtitleVar.set(cleanStr(truncateStr(ui.subtitleStr)))
+        if ui.waiting:
+            if ui.pBar.config("mode") != "inderterminate":
+                ui.pBar.configure(mode="indeterminate")
+                ui.pBar.configure(max=1000)            
+            ui.pValue+=1
+        else:
+            if ui.pBar.config("mode") != "determinate":
+                ui.pBar.configure(mode="determinate")
+                ui.pBar.configure(max=100)
             
+        ui._pVar.set(ui.pValue)
+        
+        ui._logVar.set(cleanStr(truncateStr(ui.logStr)))
+        ui._etaVar.set(cleanStr(truncateStr(ui.etaStr)))
+        ui._elapsedVar.set(cleanStr(truncateStr(ui.elapsedStr)))
+        ui._memVar.set(cleanStr(truncateStr(ui.memStr)))
+        ui.root.title(cleanStr(truncateStr(ui.windowTitleStr)))
 
-#             smoothing = .1
-#             speed = valueDiff / timeDiff if timeDiff > 0 else 0
-#             if speed <=0:
-#                 smoothed_speed = last_speed
-
-#             else:
-#                 smoothed_speed = smoothing * speed + (1-smoothing) * last_speed
-            
-#             speed = smoothed_speed
-
-#             if speed <= 0:
-#                 etaTime = 0
-#             else:
-#                 remaining = 100 - new_value 
-#                 etaTime = remaining / speed
-
-#             etaStr = str(datetime.timedelta(seconds=int(etaTime)))
-#             print(f"Time Elapsed: {elapsedStr}")
-#             print(f"Average Speed: {round(speed, 2)} u/{round(timeDiff, 2)}s")
-#             print(f"ETA: {etaStr}")
-
-#             last_value = new_value
-#             last_time = datetime.datetime.now()
-#             last_speed = speed
-
-#             #percentage, elapsed, eta
-#             windowTitleStr = f"{new_value.__floor__()}% | {elapsedStr} | {etaStr}"
-
-
-
-            
-            
-
-            
-
-#since tkinter is single threaded we can't gather info in the main loop
-#so we need to create a new thread for it           
-#we create a thread to gather the info from stdout
-#main thread has to be in tk loop so we update the widgets from the tk loop
-async def updateVars():
-    global logVar, subtitleVar, titleVar, etaVar, pgVar, elapsedVar, memVar
-    titleVar.set(cleanStr(truncateStr(titleStr)))
-    subtitleVar.set(cleanStr(truncateStr(subtitleStr, Width-40)))
-    pgVar.set(int(pgValue))
-    logVar.set(cleanStr(truncateStr(logStr, 60)))
-    etaVar.set(cleanStr(truncateStr(etaStr)))
-    elapsedVar.set(cleanStr(truncateStr(str(elapsedStr))))
-    memVar.set(cleanStr(truncateStr(f"Mem Usage: {memStr}")))
-    try:
-        root.title(windowTitleStr)
-    except:
-        return
-    
-
-    
-
-
-
-async def UpdateTK():
-        root.update_idletasks()
-        root.update()
-        updateVars()
-
-
-
-    
-
-    
+        #run tk update loop
+        ui.root.update_idletasks()
+        ui.root.update()

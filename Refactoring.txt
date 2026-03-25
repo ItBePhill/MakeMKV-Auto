@@ -1,2 +1,0 @@
-Flip the program around, instead of calling main from UI, we call UI from main
-this means we can send data to an update function which will update the strings which will eventually be used to update the vars

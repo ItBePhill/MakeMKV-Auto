@@ -14,7 +14,7 @@
 
 ### Installation
 #### Running from Source
--  Download the repository using git clone or by manually downloading
+-  Download the repository using ''https://github.com/ItBePhill/MakeMKV-Auto.git'' or by manually downloading
 -  run pip install -r requirements.txt
 -  run Main.py
 -  and enjoy

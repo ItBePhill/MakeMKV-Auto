@@ -14,9 +14,9 @@
 
 ### Installation
 #### Running from Source
--  Download the repository using ''https://github.com/ItBePhill/MakeMKV-Auto.git'' or by manually downloading
--  run pip install -r requirements.txt
--  run Main.py
+-  Download the repository using ```git clone https://github.com/ItBePhill/MakeMKV-Auto.git``` or by manually downloading
+-  run ```pip install -r requirements.txt```
+-  run ```python Main.py```
 -  and enjoy
  ### Credits:<br>
 open-tray.py is edited from: https://gist.github.com/TakesTheBiscuit/a2e3d36c1d20731821fdb41b3831406e#file-open_and_close_cd_tray-py

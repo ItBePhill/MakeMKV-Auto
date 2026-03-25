@@ -12,16 +12,46 @@ import os
 
 
 
-def Run(disc):
-    i = 0
-    while True:
-        if UI.header.running and i <= 100:
-            UI.Update("Test", "Test Subtitle", f"Log: {i}", i, "100 MB", 100)
-            i+=10
-            time.sleep(1)
-        else:
-            UI.Cancel()
-            return
+def Run(disc:DiscInfo.Disc):
+
+    makemkv_args = [
+        f"{makemkv_config[0]}makemkvcon64",
+        "mkv",
+        f"disc:{makemkv_config[2]}", 
+        "all",
+        "--decrypt", 
+        f"--cache={makemkv_config[3]}", 
+        f"--minlength={makemkv_config[4]}", 
+        "--noscan",  
+        "--progress=-same",
+        "--robot", 
+        f"--directio={makemkv_config[5]}",
+        disc.path
+    ]
+    subpr = subprocess.Popen(args = makemkv_args, stdout = subprocess.PIPE)
+    UI.logMsg(f"Ripping: {disc.name}")
+    print("\n")
+    currenttitle = "0"
+    log = ""
+    current = 0
+    total = 0
+    mem = ""
+    while subpr.poll() is None and UI.header.running:
+        mem = f"{round(psutil.Process(subpr.pid).memory_info()[0] / 1000000, 2)} MB"
+        outbytes = subpr.stdout.readline() # type: ignore | This error is erroneous, the type is not None and therefore is being ignored
+        out = outbytes.decode("utf-8")
+        if("MSG:5014" in out):
+            currenttitle = UI.cleanStr(f"{out.split(",")[3].split(" ")[1]}")
+        if("PRGV:" in out):
+            total = int(UI.cleanStr(out.split(":")[1].split(",")[2]))
+            current = int(UI.cleanStr(out.split(":")[1].split(",")[0]))
+
+        if out.startswith("MSG:"):
+            log = UI.truncateStr(UI.cleanStr(out.split(",")[3].replace('"', '')), 50)
+        UI.Update(disc.name, f"Saving {currenttitle} of {disc.titles} title(s) to: {disc.path}", log, current, mem, total)
+    subpr.kill()
+    UI.Cancel()
+    return
 
 
 
@@ -148,7 +178,7 @@ def Start():
     
     #start the thread that will rip and provide the 
     UI.Init()
-    thread = threading.Thread(name="WaitThread", target=WaitForDisc)
+    thread = threading.Thread(name="WaitThread", target=WaitForDisc, daemon=True)
     thread.start()
     while True:
         UI._TkUpdate()

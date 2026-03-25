@@ -33,7 +33,9 @@ class UI:
         self.Width:int = 650
         self.Height:int = 170
         #---------- TK ----------
-        self.root = ttk.Window(themename="darkly")
+        self.root = ttk.Window(themename="darkly", alpha=0.9925)
+        
+
         self.root.minsize(self.Width,self.Height)
         self.root.maxsize(self.Width,self.Height)
         #--------- Fonts ----------
@@ -107,9 +109,8 @@ def Update(title, subtitle, log, value, mem, maxVal):
         ui.logStr = log
         ui.memStr = mem
         # Source - https://stackoverflow.com/a/929104
-        new_value = ((value - 0) / (maxVal - 0) ) * (100 - 0) + 0
+        new_value = ((value - 0) / (maxVal - 0) ) * (100 - 0) + 0 if maxVal > 0 and value > 0 else 0
         print("\n\n\n")
-
         print(f"Percentage: {int(new_value)}%")
         # pgValue = new_value
         # progress.setself._progress(int(new_value))
@@ -138,7 +139,7 @@ def Update(title, subtitle, log, value, mem, maxVal):
 
         ui.etaStr = str(datetime.timedelta(seconds=int(etaTime)))
         print(f"Time Elapsed: {ui.elapsedStr}")
-        print(f"Average Speed: {round(speed, 2)} u/{round(timeDiff, 2)}s")
+        print(f"Average Speed: {round(speed, 2)} u/{round(timeDiff, 4)}s")
         print(f"ETA: {ui.etaStr}")
 
 
@@ -146,6 +147,7 @@ def Update(title, subtitle, log, value, mem, maxVal):
         updater.last_value = int(new_value)
         updater.last_time = datetime.datetime.now()
         updater.last_speed = int(speed)
+
 class uiHeader:
     running:bool = True
     updater:Updater
@@ -172,7 +174,7 @@ def _TkUpdate():
         except:
             print("Couldn't find the window... Closing")
             quit()
-        #update widgets
+        ui.elapsedStr = str(datetime.timedelta(seconds=int(datetime.datetime.now().timestamp()) - int(header.updater.startTime.timestamp())))
         ui._titleVar.set(cleanStr(truncateStr(ui.titleStr)))
         ui._subtitleVar.set(cleanStr(truncateStr(ui.subtitleStr)))
         if ui.waiting:

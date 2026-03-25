@@ -97,7 +97,7 @@ def Start():
     ; Path to MakeMKV
     ; must be an absolute path
     ;!! If you are on linux and have installed makemkv via the forum post !!
-    ;!! Leave this blank as makemkvcon is on the PATH !!
+    ;!! Leave this as a single backslash (\) as makemkvcon is on the PATH !!
     makemkv_path = \path\to\makemkv
 
 

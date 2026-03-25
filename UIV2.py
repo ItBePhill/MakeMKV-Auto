@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import font
 import ttkbootstrap as ttk
-
+import threading
 import datetime
 from PyTaskbar import TaskbarProgress, ProgressType
 
@@ -10,20 +10,28 @@ def truncateStr(string:str, maxLength=400):
 
 def cleanStr(string:str):
     return string.replace("\n", "").replace("\r", "")
+        
 
+
+def Cancel():
+    global header
+    header.updater = Updater()
+    header.ui.reset()
+    header.running = False
 class UI:
     def __init__(self):
+        self.waiting:bool = True
         #---------- String Variables ---------
-        self.windowTitleStr:str = "MakeMKV-Auto"
-        self.titleStr:str = "N/A"
-        self.subtitleStr:str = "N/A"
-        self.logStr:str = "N/A"
-        self.etaStr:str = "0:00:00"
-        self.pValue:str = "0"
-        self.elapsedStr:str = "0:00:00"
-        self.memStr:str = 0
-        self.Width:str = 650
-        self.Height:str = 150
+        self.titleStr = "Looking For a Disc..."
+        self.subtitleStr = "Looking For a Disc..."
+        self.pValue = 0
+        self.logStr = "Looking For a Disc..."
+        self.etaStr = "0:00:00"
+        self.elapsedStr = "0:00:00"
+        self.memStr = "0 MB"
+        self.windowTitleStr = "MakeMKV-Auto"
+        self.Width:int = 650
+        self.Height:int = 170
         #---------- TK ----------
         self.root = ttk.Window(themename="darkly")
         self.root.minsize(self.Width,self.Height)
@@ -46,11 +54,12 @@ class UI:
         self.otherFrame = ttk.Frame(self.mainFrame)
         self.title = ttk.Label(self.titleFrame, textvariable=self._titleVar, font = self.titleFont)
         self.subtitle =  ttk.Label(self.titleFrame, textvariable=self._subtitleVar, font=self.subtitleFont, wraplength=self.Width-40)
-        self.pBar = ttk.Progressbar(self.otherFrame, variable=self._pVar, length=self.Width-50)
+        self.pBar = ttk.Progressbar(self.otherFrame, variable=self._pVar, length=self.Width-50, mode="indeterminate")
         self.log = ttk.Label(self.otherFrame, textvariable = self._logVar, font=self.defaultFont)
         self.eta = ttk.Label(self.otherFrame, textvariable=self._etaVar, font=self.defaultFont)
         self.elapsed = ttk.Label(self.otherFrame, textvariable=self._elapsedVar, font=self.defaultFont)
         self.mem = ttk.Label(self.otherFrame, textvariable=self._memVar, font=self.defaultFont)
+        self.cancelButton = ttk.Button(self.otherFrame, text="Abort", command=Cancel)
         
         #place all of the widgets
         self.mainFrame.pack(anchor="w", padx=10, pady=10, fill="both")
@@ -63,40 +72,20 @@ class UI:
         self.eta.grid(sticky="e", row=4, pady=2)
         self.elapsed.grid(sticky="nse", row=4, pady=2, padx=70)
         self.mem.grid(sticky="w", row=5, pady=2)
+        self.cancelButton.grid(sticky="e", row=5, pady=2)
        
     def reset(self):
-        self.titleStr = "N/A"
-        self.subtitleStr = "N/A"
+        self.titleStr = "Looking For a Disc..."
+        self.subtitleStr = "Looking For a Disc..."
         self.pValue = 0
-        self.logStr = "N\A"
+        self.logStr = "Looking For a Disc..."
         self.etaStr = "0:00:00"
         self.elapsedStr = "0:00:00"
-        self.memStr = "N/A"
+        self.memStr = "0 MB"
         self.windowTitleStr = "MakeMKV-Auto"
-        self.update()
-    def update(self):    
-        try: 
-            self.root.winfo_exists()
-        except:
-            print("Couldn't find the window... Closing")
-            quit()
-        #update widgets
-        self._titleVar.set(self.titleStr)
-        self._subtitleVar.set(self.subtitleStr)
-        self._pVar.set(self.pValue)
-        self._logVar.set(self.logStr)
-        self._etaVar.set(self.etaStr)
-        self._elapsedVar.set(self.elapsedStr)
-        self._memVar.set(self.memStr)
-        self.root.title(self.windowTitleStr)
-
-        #run tk update loop
-        self.root.update_idletasks()
-        self.root.update()
+        self.waiting = True
         
-def Cancel(updater, ui):
-    del updater
-    ui.reset()
+
 #an instance of this class will be called every time we start a new task
 class Updater:
     def __init__(self):
@@ -107,17 +96,21 @@ class Updater:
         self.path = ""
         self.total = 0
 
-def Update(updater, ui, title, subtitle, log, value, mem, max):
+def logMsg(logStr):
+    ui = header.ui
+    ui.logStr = logStr
+def Update(title, subtitle, log, value, mem, maxVal):
+        ui = header.ui
         ui.titleStr = title
         ui.subtitleStr = subtitle
-        ui.pValue = value
+        updater = header.updater
         ui.logStr = log
         ui.memStr = mem
         # Source - https://stackoverflow.com/a/929104
-        new_value = ((value - 0) / (max - 0) ) * (100 - 0) + 0
+        new_value = ((value - 0) / (maxVal - 0) ) * (100 - 0) + 0
         print("\n\n\n")
 
-        print(f"Percentage: {new_value.__floor__()}%")
+        print(f"Percentage: {int(new_value)}%")
         # pgValue = new_value
         # progress.setself._progress(int(new_value))
         #calculate average speed
@@ -125,7 +118,7 @@ def Update(updater, ui, title, subtitle, log, value, mem, max):
         timeDiff = datetime.datetime.now().timestamp() - updater.last_time.timestamp()
         #we progressed valuediff amount in timeDiff time
         # e.g. 1 unit in 1 second
-        
+        ui.pValue = int(new_value)
 
         smoothing = .1
         speed = valueDiff / timeDiff if timeDiff > 0 else 0
@@ -149,11 +142,57 @@ def Update(updater, ui, title, subtitle, log, value, mem, max):
         print(f"ETA: {ui.etaStr}")
 
 
-        ui.windowTitleStr = f"{new_value.__floor__()}% | {ui.elapsedStr} | {ui.etaStr}"
-        updater.last_value = new_value
+        ui.windowTitleStr = f"{int(new_value)}% | {ui.elapsedStr} | {ui.etaStr}"
+        updater.last_value = int(new_value)
         updater.last_time = datetime.datetime.now()
-        updater.last_speed = speed
+        updater.last_speed = int(speed)
+class uiHeader:
+    running:bool = True
+    updater:Updater
+    ui:UI
+    def __init__(self):
+        self.running:bool = True
+        self.updater:Updater
+        self.ui:UI
+header:uiHeader
+
+
+
 def Init():
-    updater = Updater()
-    ui = UI()
-    return updater, ui
+    global header
+    header = uiHeader()
+    header.updater = Updater()
+    header.ui = UI()
+
+def _TkUpdate():
+    ui = header.ui
+    while True:
+        try: 
+            ui.root.winfo_exists()
+        except:
+            print("Couldn't find the window... Closing")
+            quit()
+        #update widgets
+        ui._titleVar.set(cleanStr(truncateStr(ui.titleStr)))
+        ui._subtitleVar.set(cleanStr(truncateStr(ui.subtitleStr)))
+        if ui.waiting:
+            if ui.pBar.config("mode") != "inderterminate":
+                ui.pBar.configure(mode="indeterminate")
+                ui.pBar.configure(max=1000)            
+            ui.pValue+=1
+        else:
+            if ui.pBar.config("mode") != "determinate":
+                ui.pBar.configure(mode="determinate")
+                ui.pBar.configure(max=100)
+            
+        ui._pVar.set(ui.pValue)
+        
+        ui._logVar.set(cleanStr(truncateStr(ui.logStr)))
+        ui._etaVar.set(cleanStr(truncateStr(ui.etaStr)))
+        ui._elapsedVar.set(cleanStr(truncateStr(ui.elapsedStr)))
+        ui._memVar.set(cleanStr(truncateStr(ui.memStr)))
+        ui.root.title(cleanStr(truncateStr(ui.windowTitleStr)))
+
+        #run tk update loop
+        ui.root.update_idletasks()
+        ui.root.update()

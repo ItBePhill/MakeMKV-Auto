@@ -14,10 +14,11 @@
 
 ### Installation
 #### Running from Source
-1.   Download the repository using git clone or by manually downloading
-2.   run pip install -r requirements.txt
-3.   run Main.py
-4.   and enjoy
-
+<li>
+Download the repository using git clone or by manually downloading
+run pip install -r requirements.txt
+run Main.py
+and enjoy
+</li>
 ### Credits:<br>
 open-tray.py is edited from: https://gist.github.com/TakesTheBiscuit/a2e3d36c1d20731821fdb41b3831406e#file-open_and_close_cd_tray-py

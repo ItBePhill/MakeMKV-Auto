@@ -14,6 +14,7 @@
 > [!WARNING]
 > ### Requirements:
 > -  ~~StringProgressBar: https://pypi.org/project/StringProgressBar~~</br>
+> -  All Pip Requirements are in requirements.txt
 > -  MakeMKV (MakeMKV is free while in beta however keys have to be obtained every 60 days: https://forum.makemkv.com/forum/viewtopic.php?t=1053)
 
 

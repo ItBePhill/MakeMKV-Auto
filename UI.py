@@ -60,7 +60,7 @@ class UI:
         self.eta = ttk.Label(self.otherFrame, textvariable=self._etaVar, font=self.defaultFont)
         self.elapsed = ttk.Label(self.otherFrame, textvariable=self._elapsedVar, font=self.defaultFont)
         self.mem = ttk.Label(self.otherFrame, textvariable=self._memVar, font=self.defaultFont)
-        self.cancelButton = ttk.Button(self.otherFrame, text="Abort", command=Cancel)
+        self.cancelButton = ttk.Button(self.otherFrame, text="Abort", command=Cancel, )
         
         #place all of the widgets
         self.mainFrame.pack(anchor="w", padx=10, pady=10, fill="both")
@@ -93,7 +93,7 @@ class Updater:
         self.startTime = datetime.datetime.now()
         self.last_time = datetime.datetime.now()
         self.last_value = 0
-        self.last_speed = 0
+        self.last_speed = 0.0
         self.path = ""
         self.total = 0
 
@@ -121,7 +121,7 @@ def Update(title, subtitle, log, value, mem, maxVal):
         ui.pValue = int(new_value)
 
         smoothing = .1
-        speed = valueDiff / timeDiff if timeDiff > 0 else 0
+        speed = valueDiff / timeDiff if timeDiff > 0 and valueDiff > 0 else 0
         if speed <=0:
             smoothed_speed = updater.last_speed
 

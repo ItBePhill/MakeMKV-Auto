@@ -11,9 +11,38 @@ import psutil
 import os
 
 
-    
-def Run(disc:DiscInfo.Disc):
+def DebugRun():
+    name = "Debug Test Disc"
+    titles = 4
+    path = "/path/to/output/DEBUG_TEST_DISC"
+    UI.logMsg(f"Ripping: {name}")
+    print("\n")
+    currenttitle = "0"
+    log = ""
+    current = 0
+    total = 0
+    maxVal = 100
+    mem = ""
+    current_title = 1
+    for i in range(0, titles+1):
+        for i in range(0, maxVal, 5):
+            if UI.header.running:
+                time.sleep(1)
+                mem = f"{i * 100} MB"
+                currenttitle = current_title
+                total = maxVal
+                current = i
+                log = f"Log: {i}" 
+                UI.Update(name, f"Saving {currenttitle} of {titles} title(s) to: {path}", log, current, mem, total)
+            else:
+                break
+        if not UI.header.running:
+            break
+        current_title+=1
+    UI.Cancel()
+    return
 
+def Run(disc:DiscInfo.Disc):
     makemkv_args = [
         f"{makemkv_config[0]}makemkvcon64",
         "mkv",
@@ -72,21 +101,26 @@ def WaitForDisc():
     while disc == None:
         time.sleep(int(makemkv_config[9]))
         #this will continuosly run GetDisc, which will either return a disc or throw an error
-        try:
-            disc = DiscInfo.GetDisc(makemkv_info_args, makemkv_config)
-            disc.letter = UI.cleanStr(disc.letter)
-        except Exception as exc:
-            if "Failed to Open Disc, is one inserted?" in exc.args:
-                print("Couldn't Find Disc")
+        if(not makemkv_config[10]):
+            try:
+                disc = DiscInfo.GetDisc(makemkv_info_args, makemkv_config)
+                disc.letter = UI.cleanStr(disc.letter)
+            except Exception as exc:
+                if "Failed to Open Disc, is one inserted?" in exc.args:
+                    print("Couldn't Find Disc")
+                else:
+                    UI.logMsg(exc.args)
+                continue
+                
             else:
-                UI.logMsg(exc.args)
-            continue
-            
+                UI.logMsg(f"Preparing to rip: {disc.name}")
+                UI.header.ui.waiting = False
+                Run(disc)
+                open_tray.Run(disc.letter)
+                continue
         else:
-            UI.logMsg(f"Preparing to rip: {disc.name}")
             UI.header.ui.waiting = False
-            Run(disc)
-            open_tray.Run(disc.letter)
+            DebugRun()
             continue
 
 
@@ -163,6 +197,7 @@ def Start():
     trayOpen = config.getboolean("general", "open_tray")
     disc_check_interval = config.getfloat("general", "disc_check_interval")
     log_to_file = config.getfloat("general", "log_to_file")
+    debug_mode = config.getboolean("general", "debug_mode")
     makemkv_config = [
         makemkv_path,           #0
         makemkv_output,         #1
@@ -174,6 +209,7 @@ def Start():
         log_to_file,            #7
         trayOpen,               #8
         disc_check_interval,    #9
+        debug_mode              #10
     ]
     
     #start the thread that will rip and provide the 

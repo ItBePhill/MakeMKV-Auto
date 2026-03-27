@@ -146,7 +146,7 @@ def Update(title, subtitle, log, value, mem, maxVal):
         ui.windowTitleStr = f"{int(new_value)}% | {ui.elapsedStr} | {ui.etaStr}"
         updater.last_value = int(new_value)
         updater.last_time = datetime.datetime.now()
-        updater.last_speed = int(speed)
+        updater.last_speed = speed
 
 class uiHeader:
     running:bool = True

@@ -1,10 +1,9 @@
 import tkinter as tk
 from tkinter import font
 import ttkbootstrap as ttk
-import threading
 import datetime
 from PyTaskbar import TaskbarProgress, ProgressType
-
+import time
 def truncateStr(string:str, maxLength=400):
     return string if len(string) <= maxLength else string[:maxLength-3] + "..."
 
@@ -33,7 +32,7 @@ class UI:
         self.Width:int = 650
         self.Height:int = 170
         #---------- TK ----------
-        self.root = ttk.Window(themename="darkly", alpha=0.9925)
+        self.root = ttk.Window(themename="darkly", alpha=0.95)
         
 
         self.root.minsize(self.Width,self.Height)
@@ -109,7 +108,7 @@ def Update(title, subtitle, log, value, mem, maxVal):
         ui.logStr = log
         ui.memStr = mem
         # Source - https://stackoverflow.com/a/929104
-        new_value = ((value - 0) / (maxVal - 0) ) * (100 - 0) + 0 if maxVal > 0 and value > 0 else 0
+        new_value = (value / maxVal) * 100 if maxVal > 0 and value > 0 else 0
         print("\n\n\n")
         print(f"Percentage: {int(new_value)}%")
         # pgValue = new_value
@@ -154,18 +153,33 @@ class uiHeader:
     ui:UI
     def __init__(self):
         self.running:bool = True
-        self.updater:Updater
-        self.ui:UI
+        self.updater:Updater = None
+        self.ui:UI = None
 header:uiHeader
 
+def ButtonYes():
+    pass
+def ButtonNo():
+    pass
+def ClosePopup():
+    top = ttk.Toplevel("Are you sure you want to Quit?")
+    NoButton = ttk.Button(top, "No", command=ButtonNo)
+    YesButton = ttk.Button(top, "Yes", command=ButtonYes)
+    NoButton.grid(row=0, sticky="SW")
+    YesButton.grid(row=0, sticky="SW")
+    
 
+    
 
+def CouldntFindPopup():
+    pass
 def Init():
     global header
     header = uiHeader()
     header.updater = Updater()
     header.ui = UI()
 
+maxIn = 100
 def _TkUpdate():
     ui = header.ui
     while True:
@@ -178,14 +192,14 @@ def _TkUpdate():
         ui._titleVar.set(cleanStr(truncateStr(ui.titleStr)))
         ui._subtitleVar.set(cleanStr(truncateStr(ui.subtitleStr)))
         if ui.waiting:
-            if ui.pBar.config("mode") != "inderterminate":
-                ui.pBar.configure(mode="indeterminate")
-                ui.pBar.configure(max=1000)            
+            if ui.pBar.cget("mode") != "indeterminate":
+                ui.pBar.configure(mode="indeterminate")         
             ui.pValue+=1
+            if ui.pValue >= 100:
+                ui.pValue = -100
         else:
-            if ui.pBar.config("mode") != "determinate":
+            if ui.pBar.cget("mode") != "determinate":
                 ui.pBar.configure(mode="determinate")
-                ui.pBar.configure(max=100)
             
         ui._pVar.set(ui.pValue)
         
@@ -198,3 +212,5 @@ def _TkUpdate():
         #run tk update loop
         ui.root.update_idletasks()
         ui.root.update()
+        #limits to 120fps
+        time.sleep(0.00833)

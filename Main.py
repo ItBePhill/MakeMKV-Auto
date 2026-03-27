@@ -8,12 +8,11 @@ import open_tray
 import subprocess
 import datetime
 import psutil
-import os
 
 
 def DebugRun():
     name = "Debug Test Disc"
-    titles = 4
+    titles = 2
     path = "/path/to/output/DEBUG_TEST_DISC"
     UI.logMsg(f"Ripping: {name}")
     print("\n")
@@ -24,7 +23,7 @@ def DebugRun():
     maxVal = 100
     mem = ""
     current_title = 1
-    for i in range(0, titles+1):
+    for i in range(0, titles):
         for i in range(0, maxVal, 5):
             if UI.header.running:
                 time.sleep(1)
@@ -65,6 +64,7 @@ def Run(disc:DiscInfo.Disc):
     current = 0
     total = 0
     mem = ""
+    
     while subpr.poll() is None and UI.header.running:
         mem = f"{round(psutil.Process(subpr.pid).memory_info()[0] / 1000000, 2)} MB"
         outbytes = subpr.stdout.readline() # type: ignore | This error is erroneous, the type is not None and therefore is being ignored
@@ -78,7 +78,13 @@ def Run(disc:DiscInfo.Disc):
         if out.startswith("MSG:"):
             log = UI.truncateStr(UI.cleanStr(out.split(",")[3].replace('"', '')), 50)
         UI.Update(disc.name, f"Saving {currenttitle} of {disc.titles} title(s) to: {disc.path}", log, current, mem, total)
-    subpr.kill()
+    if not UI.header.running:
+        subpr.kill()
+    elif subpr.returncode == 0:
+        subpr.terminate()
+    else:
+        print(f"Something went wrong and the process had to quit return code: {subpr.returncode}")
+        UI.logMsg(f"Something went wrong and the process had to quit return code: {subpr.returncode}")
     UI.Cancel()
     return
 
@@ -90,7 +96,12 @@ def WaitForDisc():
     disc = None
     UI.header.ui.waiting = True
     if os.path.exists(f"{makemkv_config[0]}makemkvcon64"): path = f"{makemkv_config[0]}makemkvcon64"
-    else: path = f"{makemkv_config[0]}makemkvcon"
+    elif os.path.exists(f"{makemkv_config[0]}makemkvcon"): path = f"{makemkv_config[0]}makemkvcon"
+    else: 
+        print("MakeMKV couldn't be found is it installed?")
+        os.system("pause")
+        exit()
+
     makemkv_info_args = [
          path,
          "info",
@@ -115,11 +126,14 @@ def WaitForDisc():
             else:
                 UI.logMsg(f"Preparing to rip: {disc.name}")
                 UI.header.ui.waiting = False
+                UI.header.running = True
                 Run(disc)
                 open_tray.Run(disc.letter)
+                disc = None
                 continue
         else:
             UI.header.ui.waiting = False
+            UI.header.running = True
             DebugRun()
             continue
 
@@ -174,6 +188,9 @@ def Start():
     ; Whether the log the output to a file
     log_to_file = 1
 
+    ;if set to 1 will bypass makemkv and run a debug script instead
+    debug_mode = 0
+
     """
 
 
@@ -196,7 +213,7 @@ def Start():
     makemkv_output = config.get("makemkv", "makemkv_output")
     trayOpen = config.getboolean("general", "open_tray")
     disc_check_interval = config.getfloat("general", "disc_check_interval")
-    log_to_file = config.getfloat("general", "log_to_file")
+    log_to_file = config.getboolean("general", "log_to_file")
     debug_mode = config.getboolean("general", "debug_mode")
     makemkv_config = [
         makemkv_path,           #0

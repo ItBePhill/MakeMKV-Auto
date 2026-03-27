@@ -51,7 +51,6 @@ def Run(disc:DiscInfo.Disc):
         f"--cache={makemkv_config[3]}", 
         f"--minlength={makemkv_config[4]}", 
         "--noscan",  
-        "--progress=-same",
         "--robot", 
         f"--directio={makemkv_config[5]}",
         disc.path
@@ -83,8 +82,8 @@ def Run(disc:DiscInfo.Disc):
     elif subpr.returncode == 0:
         subpr.terminate()
     else:
-        print(f"Something went wrong and the process had to quit return code: {subpr.returncode}")
-        UI.logMsg(f"Something went wrong and the process had to quit return code: {subpr.returncode}")
+        print(f"Something went wrong and the process had to quit\n return code: {subpr.returncode}")
+        UI.logMsg(f"Something went wrong and the process had to quit\n return code: {subpr.returncode}")
     UI.Cancel()
     return
 
@@ -95,12 +94,21 @@ def Run(disc:DiscInfo.Disc):
 def WaitForDisc():
     disc = None
     UI.header.ui.waiting = True
-    if os.path.exists(f"{makemkv_config[0]}makemkvcon64"): path = f"{makemkv_config[0]}makemkvcon64"
-    elif os.path.exists(f"{makemkv_config[0]}makemkvcon"): path = f"{makemkv_config[0]}makemkvcon"
-    else: 
-        print("MakeMKV couldn't be found is it installed?")
-        os.system("pause")
-        exit()
+
+    #check if we can use makemkvcon64
+    path = f'"{makemkv_config[0]}makemkvcon64"'
+    try:
+        subprocess.check_call(f"{makemkv_config[0]}makemkvcon64", stdout=subprocess.PIPE)
+    #64 bit failed so we must check 32 bit instead
+    except:
+        try:
+            path = f'"{makemkv_config[0]}makemkvcon"'
+            subprocess.check_call(f"{makemkv_config[0]}makemkvcon",stdout=subprocess.PIPE)
+            #makemkv must not be installed or the path is incorrect
+        except:
+            print("Couldn't find MakeMKV is it installed?...")
+            os.system("pause")
+            exit()
 
     makemkv_info_args = [
          path,

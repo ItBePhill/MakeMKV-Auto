@@ -219,6 +219,7 @@ def _TkUpdate():
                 if str(ui.pBar["mode"]) != "determinate":
                     ui.pBar.configure(mode="determinate")
                     ui.pValue = 0    
+                    print(ui.pValue)
                     
                 
             ui._pVar.set(ui.pValue)

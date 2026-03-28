@@ -32,7 +32,7 @@ class UI:
         self.Width:int = 650
         self.Height:int = 170
         #---------- TK ----------
-        self.root = ttk.Window(themename="darkly", alpha=0.95)
+        self.root = ttk.Window(themename="darkly", alpha=0.99)
         
 
         self.root.minsize(self.Width,self.Height)

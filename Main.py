@@ -98,12 +98,12 @@ def WaitForDisc():
     #check if we can use makemkvcon64
     path = f'"{makemkv_config[0]}makemkvcon64"'
     try:
-        subprocess.check_call(f"{makemkv_config[0]}makemkvcon64", stdout=subprocess.PIPE)
+        subprocess.check_call([f"{makemkv_config[0]}makemkvcon64"], stdout=subprocess.PIPE)
     #64 bit failed so we must check 32 bit instead
     except:
         try:
             path = f'"{makemkv_config[0]}makemkvcon"'
-            subprocess.check_call(f"{makemkv_config[0]}makemkvcon",stdout=subprocess.PIPE)
+            subprocess.check_call([f"{makemkv_config[0]}makemkvcon"],stdout=subprocess.PIPE)
             #makemkv must not be installed or the path is incorrect
         except:
             print("Couldn't find MakeMKV is it installed?...")

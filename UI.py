@@ -33,7 +33,7 @@ class UI:
         self.Height:int = 170
         #---------- TK ----------
         self.root = ttk.Window(themename="darkly", alpha=0.99)
-        
+        self.root.protocol("WM_DELETE_WINDOW", lambda: ClosePopup(self.root))
 
         self.root.minsize(self.Width,self.Height)
         self.root.maxsize(self.Width,self.Height)
@@ -153,64 +153,86 @@ class uiHeader:
     ui:UI
     def __init__(self):
         self.running:bool = True
-        self.updater:Updater = None
-        self.ui:UI = None
+        self.updater:Updater = None #type: ignore for some reason only vscode on my pc throws an error for this?
+        self.ui:UI = None #type: ignore
 header:uiHeader
 
 def ButtonYes():
-    pass
-def ButtonNo():
-    pass
-def ClosePopup():
-    top = ttk.Toplevel("Are you sure you want to Quit?")
-    NoButton = ttk.Button(top, "No", command=ButtonNo)
-    YesButton = ttk.Button(top, "Yes", command=ButtonYes)
-    NoButton.grid(row=0, sticky="SW")
-    YesButton.grid(row=0, sticky="SW")
+    header.ui.root.destroy()
+def ButtonNo(top:ttk.Toplevel):
+    top.destroy()
+def ClosePopup(root):
+    top = ttk.Toplevel(root)
+    top.title("Are you Sure?")
+    top.position_center()
+    frame = ttk.Frame(top)
+    buttonFrame =  ttk.Frame(frame)
+    Label = ttk.Label(frame, text=f"Are you sure you want to quit?\nThis will cancel the current operation", font=header.ui.titleFont)
+    NoButton = ttk.Button(buttonFrame, text="No", command=lambda: ButtonNo(top))
+    YesButton = ttk.Button(buttonFrame, text="Yes", command=ButtonYes)
+    frame.pack(anchor="w", padx=10, pady=10, fill="both")
+    Label.pack(anchor="nw")
+    buttonFrame.pack(anchor="se")
+    NoButton.grid(sticky="sw", row=0, column=-0, padx=5, pady=5)
+    YesButton.grid(sticky="se",row=0, column=1, pady=5)
     
+def CouldntFindPopup(root, path):
+    top = ttk.Toplevel(root)
+    top.title("MakeMKV not found")
+    top.position_center()
+    frame = ttk.Frame(top)
+    title = ttk.Label(frame, text=f"Couldn't find MakeMKV", font=header.ui.titleFont)
+    label = ttk.Label(frame, text=f"path: {path}", font=header.ui.defaultFont)
+    frame.pack(anchor="w", padx=10, pady=10, fill="both")
+    title.pack(anchor="nw", padx=2, pady=5)
+    label.pack(anchor="nw", padx=2, pady=5)
+    YesButton = ttk.Button(frame, text="Quit", command=ButtonYes)
+    YesButton.pack(anchor="se", padx=5, pady=5)
 
-    
-
-def CouldntFindPopup():
-    pass
 def Init():
     global header
     header = uiHeader()
     header.updater = Updater()
     header.ui = UI()
+    
+    
 
 maxIn = 100
+
+
 def _TkUpdate():
     ui = header.ui
     while True:
         try: 
-            ui.root.winfo_exists()
-        except:
-            print("Couldn't find the window... Closing")
-            quit()
-        ui.elapsedStr = str(datetime.timedelta(seconds=int(datetime.datetime.now().timestamp()) - int(header.updater.startTime.timestamp())))
-        ui._titleVar.set(cleanStr(truncateStr(ui.titleStr)))
-        ui._subtitleVar.set(cleanStr(truncateStr(ui.subtitleStr)))
-        if ui.waiting:
-            if ui.pBar.cget("mode") != "indeterminate":
-                ui.pBar.configure(mode="indeterminate")         
-            ui.pValue+=1
-            if ui.pValue >= 100:
-                ui.pValue = -100
-        else:
-            if ui.pBar.cget("mode") != "determinate":
-                ui.pBar.configure(mode="determinate")
-            
-        ui._pVar.set(ui.pValue)
-        
-        ui._logVar.set(cleanStr(truncateStr(ui.logStr)))
-        ui._etaVar.set(cleanStr(truncateStr(ui.etaStr)))
-        ui._elapsedVar.set(cleanStr(truncateStr(ui.elapsedStr)))
-        ui._memVar.set(cleanStr(truncateStr(ui.memStr)))
-        ui.root.title(cleanStr(truncateStr(ui.windowTitleStr)))
+            ui.elapsedStr = str(datetime.timedelta(seconds=int(datetime.datetime.now().timestamp()) - int(header.updater.startTime.timestamp())))
+            ui._titleVar.set(cleanStr(truncateStr(ui.titleStr)))
+            ui._subtitleVar.set(cleanStr(truncateStr(ui.subtitleStr)))
+            if ui.waiting:
+                if str(ui.pBar["mode"]) != "indeterminate":
+                    ui.pBar.configure(mode="indeterminate")
+                    ui.pValue = 0     
 
-        #run tk update loop
-        ui.root.update_idletasks()
-        ui.root.update()
-        #limits to 120fps
-        time.sleep(0.00833)
+                ui.pValue+=1
+                if ui.pValue >= 100:
+                    ui.pValue = -100
+            else:
+                if str(ui.pBar["mode"]) != "determinate":
+                    ui.pBar.configure(mode="determinate")
+                    ui.pValue = 0    
+                    
+                
+            ui._pVar.set(ui.pValue)
+            
+            ui._logVar.set(cleanStr(truncateStr(ui.logStr)))
+            ui._etaVar.set(cleanStr(truncateStr(ui.etaStr)))
+            ui._elapsedVar.set(cleanStr(truncateStr(ui.elapsedStr)))
+            ui._memVar.set(cleanStr(truncateStr(ui.memStr)))
+            ui.root.title(cleanStr(truncateStr(ui.windowTitleStr)))
+
+            #run tk update loop
+            ui.root.update_idletasks()
+            ui.root.update()
+            #limits to 120fps
+            time.sleep(0.00833)
+        except tk.TclError:
+            quit()

@@ -8,6 +8,7 @@ import open_tray
 import subprocess
 import datetime
 import psutil
+import shutil
 
 
 def DebugRun():
@@ -43,7 +44,7 @@ def DebugRun():
 
 def Run(disc:DiscInfo.Disc):
     makemkv_args = [
-        f"{makemkv_config[0]}makemkvcon64",
+        makemkv_config[0],
         "mkv",
         f"disc:{makemkv_config[2]}", 
         "all",
@@ -52,6 +53,7 @@ def Run(disc:DiscInfo.Disc):
         f"--minlength={makemkv_config[4]}", 
         "--noscan",  
         "--robot", 
+        "--progress=-same",
         f"--directio={makemkv_config[5]}",
         disc.path
     ]
@@ -70,7 +72,7 @@ def Run(disc:DiscInfo.Disc):
         out = outbytes.decode("utf-8")
         if("MSG:5014" in out):
             currenttitle = UI.cleanStr(f"{out.split(",")[3].split(" ")[1]}")
-        if("PRGV:" in out):
+        if("PRGV" in out):
             total = int(UI.cleanStr(out.split(":")[1].split(",")[2]))
             current = int(UI.cleanStr(out.split(":")[1].split(",")[0]))
 
@@ -94,24 +96,8 @@ def Run(disc:DiscInfo.Disc):
 def WaitForDisc():
     disc = None
     UI.header.ui.waiting = True
-
-    #check if we can use makemkvcon64
-    path = f'"{makemkv_config[0]}makemkvcon64"'
-    try:
-        subprocess.check_call([f"{makemkv_config[0]}makemkvcon64"], stdout=subprocess.PIPE)
-    #64 bit failed so we must check 32 bit instead
-    except:
-        try:
-            path = f'"{makemkv_config[0]}makemkvcon"'
-            subprocess.check_call([f"{makemkv_config[0]}makemkvcon"],stdout=subprocess.PIPE)
-            #makemkv must not be installed or the path is incorrect
-        except:
-            print("Couldn't find MakeMKV is it installed?...")
-            os.system("pause")
-            exit()
-
     makemkv_info_args = [
-         path,
+         makemkv_config[0],
          "info",
          f"disc:{makemkv_config[2]}", 
          "--robot",
@@ -223,6 +209,9 @@ def Start():
     disc_check_interval = config.getfloat("general", "disc_check_interval")
     log_to_file = config.getboolean("general", "log_to_file")
     debug_mode = config.getboolean("general", "debug_mode")
+       
+    path = ""
+    
     makemkv_config = [
         makemkv_path,           #0
         makemkv_output,         #1
@@ -236,9 +225,25 @@ def Start():
         disc_check_interval,    #9
         debug_mode              #10
     ]
-    
-    #start the thread that will rip and provide the 
     UI.Init()
+    #check if we can find makemkvcon in PATH or in the directory provided
+    makemkv_found = False
+    if not debug_mode:
+        for name in ["makemkvcon64", "makemkvcon"]:
+            if shutil.which(name):
+                makemkv_config[0] = makemkv_path + name
+                makemkv_found = True
+                break
+            elif shutil.which(f"{makemkv_path}{name}"):
+                makemkv_config[0] = makemkv_path + name
+                makemkv_found = True
+                break
+
+        if not makemkv_found:
+            print("Couldn't find MakeMKV, is it installed?")
+            UI.CouldntFindPopup(UI.header.ui.root, makemkv_path)
+            while True:
+                UI._TkUpdate()
     thread = threading.Thread(name="WaitThread", target=WaitForDisc, daemon=True)
     thread.start()
     while True:

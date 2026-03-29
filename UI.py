@@ -94,8 +94,11 @@ class Updater:
         self.last_time = datetime.datetime.now()
         self.last_value = 0
         self.last_speed = 0.0
+        self.smoothed_eta = 0.0
         self.path = ""
         self.total = 0
+        self.last_elapsed_seconds = -1  # forces first update immediately
+        self.last_eta_seconds = -1
 
 def logMsg(logStr):
     ui = header.ui
@@ -111,41 +114,15 @@ def Update(title, subtitle, log, value, mem, maxVal):
         new_value = (value / maxVal) * 100 if maxVal > 0 and value > 0 else 0
         print("\n\n\n")
         print(f"Percentage: {int(new_value)}%")
-        # pgValue = new_value
-        # progress.setself._progress(int(new_value))
         #calculate average speed
-        valueDiff = new_value - updater.last_value
-        timeDiff = datetime.datetime.now().timestamp() - updater.last_time.timestamp()
         #we progressed valuediff amount in timeDiff time
         # e.g. 1 unit in 1 second
         ui.pValue = int(new_value)
-
-        smoothing = .1
-        speed = valueDiff / timeDiff if timeDiff > 0 and valueDiff > 0 else 0
-        if speed <=0:
-            smoothed_speed = updater.last_speed
-
-        else:
-            smoothed_speed = smoothing * speed + (1-smoothing) * updater.last_speed
-        
-        speed = smoothed_speed
-
-        if speed <= 0:
-            etaTime = 0
-        else:
-            remaining = 100 - new_value 
-            etaTime = remaining / speed
-
-        ui.etaStr = str(datetime.timedelta(seconds=int(etaTime)))
         print(f"Time Elapsed: {ui.elapsedStr}")
-        print(f"Average Speed: {round(speed, 2)} u/{round(timeDiff, 4)}s")
         print(f"ETA: {ui.etaStr}")
 
 
         ui.windowTitleStr = f"{int(new_value)}% | {ui.elapsedStr} | {ui.etaStr}"
-        updater.last_value = int(new_value)
-        updater.last_time = datetime.datetime.now()
-        updater.last_speed = speed
 
 class uiHeader:
     running:bool = True
@@ -203,37 +180,61 @@ maxIn = 100
 def _TkUpdate():
     ui = header.ui
     while True:
-        try: 
-            ui.elapsedStr = str(datetime.timedelta(seconds=int(datetime.datetime.now().timestamp()) - int(header.updater.startTime.timestamp())))
+        try:
+            now = datetime.datetime.now()
+            elapsed_seconds = int((now - header.updater.startTime).total_seconds())
+
+            # Only update elapsed display when the second changes
+            if elapsed_seconds != header.updater.last_elapsed_seconds:
+                ui.elapsedStr = str(datetime.timedelta(seconds=elapsed_seconds))
+                header.updater.last_elapsed_seconds = elapsed_seconds
+
+            # Recalculate ETA every frame using overall average speed
+            if elapsed_seconds > 0 and ui.pValue > 0 and not ui.waiting:
+                avg_speed = ui.pValue / elapsed_seconds
+                remaining = 100 - ui.pValue
+                raw_eta = remaining / avg_speed
+
+                if header.updater.smoothed_eta == 0.0:
+                    header.updater.smoothed_eta = raw_eta
+                else:
+                    header.updater.smoothed_eta = (
+                        0.05 * raw_eta +
+                        0.95 * header.updater.smoothed_eta
+                    )
+
+                eta_int = int(header.updater.smoothed_eta)
+                if eta_int != header.updater.last_eta_seconds:
+                    ui.etaStr = str(datetime.timedelta(seconds=eta_int))
+                    header.updater.last_eta_seconds = eta_int
+            elif ui.waiting:
+                ui.etaStr = "0:00:00"
+
             ui._titleVar.set(cleanStr(truncateStr(ui.titleStr)))
             ui._subtitleVar.set(cleanStr(truncateStr(ui.subtitleStr)))
             if ui.waiting:
                 if str(ui.pBar["mode"]) != "indeterminate":
                     ui.pBar.configure(mode="indeterminate")
-                    ui.pValue = 0     
+                    ui.pValue = 0
 
-                ui.pValue+=1
+                ui.pValue += 1
                 if ui.pValue >= 100:
                     ui.pValue = -100
             else:
                 if str(ui.pBar["mode"]) != "determinate":
                     ui.pBar.configure(mode="determinate")
-                    ui.pValue = 0    
+                    ui.pValue = 0
                     print(ui.pValue)
-                    
-                
+
             ui._pVar.set(ui.pValue)
-            
-            ui._logVar.set(cleanStr(truncateStr(ui.logStr)))
+            ui._logVar.set(cleanStr(truncateStr(ui.logStr, 50)))
             ui._etaVar.set(cleanStr(truncateStr(ui.etaStr)))
             ui._elapsedVar.set(cleanStr(truncateStr(ui.elapsedStr)))
             ui._memVar.set(cleanStr(truncateStr(ui.memStr)))
             ui.root.title(cleanStr(truncateStr(ui.windowTitleStr)))
 
-            #run tk update loop
             ui.root.update_idletasks()
             ui.root.update()
-            #limits to 120fps
             time.sleep(0.00833)
         except tk.TclError:
             quit()

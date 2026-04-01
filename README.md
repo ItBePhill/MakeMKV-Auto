@@ -26,4 +26,5 @@
 ## External Modules:<br>
 - PyTaskbar
 - psutil
+- ttkbootstrap
 

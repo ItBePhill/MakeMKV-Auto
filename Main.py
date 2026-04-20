@@ -57,6 +57,8 @@ def Run(disc:DiscInfo.Disc):
         f"--directio={makemkv_config[5]}",
         disc.path
     ]
+    if not os.path.exists(disc.path):
+        os.mkdir(disc.path)
     subpr = subprocess.Popen(args = makemkv_args, stdout = subprocess.PIPE)
     UI.logMsg(f"Ripping: {disc.name}")
     print("\n")
@@ -66,8 +68,6 @@ def Run(disc:DiscInfo.Disc):
     total = 0
     mem = ""
     
-    if not os.path.exists(disc.path):
-        os.mkdir(disc.path)
     while subpr.poll() is None and UI.header.running:
         mem = f"{round(psutil.Process(subpr.pid).memory_info()[0] / 1000000, 2)} MB"
         outbytes = subpr.stdout.readline() # type: ignore | This error is erroneous, the type is not None and therefore is being ignored
@@ -79,8 +79,7 @@ def Run(disc:DiscInfo.Disc):
             current = int(UI.cleanStr(out.split(":")[1].split(",")[0]))
 
         if out.startswith("MSG:"):
-            log = out.split(",")[3].replace('"', '')
-            print(log)
+            log = UI.truncateStr(UI.cleanStr(out.split(",")[3].replace('"', '')), 50)
         UI.Update(disc.name, f"Saving {currenttitle} of {disc.titles} title(s) to: {disc.path}", log, current, mem, total)
     if not UI.header.running:
         subpr.kill()
